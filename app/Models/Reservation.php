@@ -21,14 +21,26 @@ class Reservation extends Model
         'payment_intent_id' // AJOUTER (si manquant)
     ];
 
+    // Corriger la relation association
+    public function association()
+    {
+        return $this->belongsTo(User::class, 'association_id')->where('role', 'association');
+    }
+
+    // Ajouter la relation user
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function slot()
     {
         return $this->belongsTo(Slot::class);
     }
 
 
-    public function association()
-    {
-        return $this->belongsTo(Association::class); // MODIFIER (au lieu de User)
-    }
+    // public function association()
+    // {
+    //     return $this->belongsTo(Association::class); // MODIFIER (au lieu de User)
+    // }
 }

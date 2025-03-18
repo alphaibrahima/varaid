@@ -27,6 +27,8 @@ class SlotResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-clock';
     protected static ?string $navigationLabel = 'Créneaux Horaires';
     protected static ?string $modelLabel = 'Créneau';
+    protected static ?string $pluralModelLabel = 'Créneaux';
+
 
     public static function form(Form $form): Form
     {
