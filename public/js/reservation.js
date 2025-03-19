@@ -1,3 +1,9 @@
+document.addEventListener("DOMContentLoaded", function() {
+    console.log(document.getElementById('confirmation-day'));
+});
+window.onload = function() {
+    console.log("JavaScript chargé après le chargement complet !");
+};
 // Variables pour stocker les sélections
 let selectedDay = '';
 let selectedTime = '';
@@ -33,14 +39,49 @@ function goToStep(step) {
 // Sélection du jour
 function selectDay(day) {
     selectedDay = day;
-    const date = new Date(day);
-    const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-    const formattedDate = date.toLocaleDateString('fr-FR', options);
+    const formattedDate = new Date(day).toLocaleDateString('fr-FR', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
+
+    // Mettre à jour l'affichage de la date sélectionnée
     document.getElementById('selected-day').textContent = `- ${formattedDate}`;
     document.getElementById('recap-day').textContent = formattedDate;
     document.getElementById('confirmation-day').textContent = formattedDate;
+
+    // Passer la date dans l'URL en l'encodant pour éviter les erreurs
+    let url = `/get-slots/${encodeURIComponent(selectedDay)}`;
+
+    // Requête AJAX pour récupérer les créneaux horaires
+    $.get(url)
+        .done(function(response) {
+            console.log(response); // Debugging : voir la réponse
+
+            let slotsContainer = $('#time-slots-container');
+            slotsContainer.empty();
+
+            if (Array.isArray(response) && response.length > 0) {
+                response.forEach(slot => {
+                    let cardHtml = `
+                        <div class="card creneaux-heure col-md-4" onclick="selectTimeSlot('${slot.start_time}')">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">${slot.start_time.substring(0, 5)}</h5>
+                                <p class="card-text"><small class="text-muted">${slot.max_reservations} places restantes</small></p>
+                            </div>
+                        </div>`;
+                    slotsContainer.append(cardHtml);
+                });
+            } else {
+                slotsContainer.append('<p>Aucun créneau disponible pour cette date.</p>');
+            }
+        })
+        .fail(function() {
+            alert('Erreur lors de la récupération des créneaux.');
+        });
+
+    // Passer à l'étape suivante
     goToStep(2);
 }
+
 
 // Sélection de l'heure
 function selectTimeSlot(time) {
