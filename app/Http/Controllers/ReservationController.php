@@ -33,4 +33,13 @@ class ReservationController extends Controller
 
         return response()->json($slots);
     }
+
+    private function getAvailabilityStatus($totalCapacity)
+    {
+        return match(true) {
+            $totalCapacity === 0 => 'complet',
+            $totalCapacity < 5 => 'presque_complet',
+            default => 'disponible'
+        };
+    }
 }

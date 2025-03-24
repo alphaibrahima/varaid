@@ -58,7 +58,7 @@
         <div class="card-footer">
             <div class="d-grid">
                 <button id="submit-payment" class="btn btn-success py-3">
-                    Confirmer et payer l'acompte de 200€
+                    Confirmer et payer l'acompte de 100€
                 </button>
             </div>
         </div>

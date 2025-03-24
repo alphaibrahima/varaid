@@ -62,10 +62,12 @@ function selectDay(day) {
             if (Array.isArray(response) && response.length > 0) {
                 response.forEach(slot => {
                     let cardHtml = `
-                        <div class="card creneaux-heure col-md-4" onclick="selectTimeSlot('${slot.start_time}')">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">${slot.start_time.substring(0, 5)}</h5>
-                                <p class="card-text"><small class="text-muted">${slot.max_reservations} places restantes</small></p>
+                        <div class="col-md-4 mb-4"> <!-- Colonne avec espacement -->
+                            <div class="card creneaux-heure" onclick="selectTimeSlot('${slot.start_time}')">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">${slot.start_time.substring(0, 5)}</h5>
+                                    <p class="card-text"><small class="text-muted">${slot.max_reservations} places restantes</small></p>
+                                </div>
                             </div>
                         </div>`;
                     slotsContainer.append(cardHtml);

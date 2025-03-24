@@ -93,6 +93,19 @@
     background-color: #fefde5 !important;
 }
 
+/* Appliquer une bordure colorée au survol */
+.card.border-danger:hover {
+    border: 2px solid #dc3545; /* Rouge */
+}
+
+.card.border-warning:hover {
+    border: 2px solid #ffc107; /* Jaune */
+}
+
+.card.border-success:hover {
+    border: 2px solid #28a745; /* Vert */
+}
+
 /* Styles responsives pour les écrans plus petits */
 @media (max-width: 992px) {
     .page-container {
