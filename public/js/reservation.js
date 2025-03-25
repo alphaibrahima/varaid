@@ -207,7 +207,7 @@ function processPayment(event) {
     setTimeout(function() {
         // Simuler un appel réussi à Stripe
         submitButton.disabled = false;
-        submitButton.innerHTML = 'Confirmer et payer l\'acompte de 200€';
+        submitButton.innerHTML = 'Confirmer et payer l\'acompte de 100€';
         
         // Dans un environnement réel, vous utiliseriez ce code:
         /*

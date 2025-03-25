@@ -19,7 +19,7 @@
                 <div class="col-md-6">
                     <p><strong>Taille:</strong> <span id="recap-size">Grand (~25kg)</span></p>
                     <p><strong>Quantité:</strong> <span id="recap-quantity">1</span></p>
-                    <p><strong>Acompte à payer:</strong> <span class="text-primary fw-bold">200,00 €</span></p>
+                    <p><strong>Acompte à payer:</strong> <span class="text-primary fw-bold">100,00 €</span></p>
                 </div>
             </div>
             <hr>
@@ -32,7 +32,7 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="cardholder-name" class="form-label">Nom sur la carte</label>
-                                <input type="text" class="form-control" id="cardholder-name" placeholder="Jean Dupont" required>
+                                <input type="text" class="form-control" id="cardholder-name" placeholder="Mouhamad" required>
                             </div>
                             <div class="col-md-6">
                                 <label for="cardholder-email" class="form-label">Email</label>
