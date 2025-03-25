@@ -30,8 +30,10 @@ function goToStep(step) {
         }
     });
     
-    // Initialiser Stripe si on est à l'étape 4
+    // Initialiser Stripe et mettre à jour le bouton si on est à l'étape 4
     if (step === 4) {
+        updateDeposit(); // Mettre à jour l'acompte
+        updatePaymentButton(); // Mettre à jour le texte du bouton
         initStripe();
     }
 }
@@ -96,6 +98,14 @@ function selectTimeSlot(time) {
     goToStep(3);
 }
 
+// Fonction pour mettre à jour l'acompte
+function updateDeposit() {
+    const depositElement = document.getElementById('recap-deposit');
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
+    const deposit = quantity * 100; // 100€ par unité
+    depositElement.textContent = `${deposit},00 €`;
+}
+
 // Incrémentation de la quantité
 function incrementQuantity() {
     const quantityInput = document.getElementById('quantity');
@@ -104,6 +114,7 @@ function incrementQuantity() {
         quantityInput.value = selectedQuantity;
         document.getElementById('recap-quantity').textContent = selectedQuantity;
         document.getElementById('confirmation-quantity').textContent = selectedQuantity;
+        updateDeposit(); // Mettre à jour l'acompte
     }
 }
 
@@ -115,6 +126,7 @@ function decrementQuantity() {
         quantityInput.value = selectedQuantity;
         document.getElementById('recap-quantity').textContent = selectedQuantity;
         document.getElementById('confirmation-quantity').textContent = selectedQuantity;
+        updateDeposit(); // Mettre à jour l'acompte
     }
 }
 
@@ -247,4 +259,12 @@ function confirmReservation() {
     // Afficher la modal de confirmation
     const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
     confirmationModal.show();
+}
+
+// Fonction pour mettre à jour le bouton de paiement
+function updatePaymentButton() {
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
+    const deposit = quantity * 100; // 100€ par unité
+    const paymentButton = document.getElementById('submit-payment');
+    paymentButton.textContent = `Confirmer et payer l'acompte de ${deposit},00 €`;
 }

@@ -14,12 +14,12 @@
                 <div class="col-md-6">
                     <p><strong>Jour:</strong> <span id="recap-day">Mardi 11 Mars 2025</span></p>
                     <p><strong>Heure:</strong> <span id="recap-time">09:30</span></p>
-                    <p><strong>Association/Mosquée:</strong> <span id="recap-assoc">Mosquée de la Paix</span></p>
+                    <p><strong>Association/Mosquée:</strong> <span id="recap-assoc">{{ $userAssociation }}</span></p>
                 </div>
                 <div class="col-md-6">
                     <p><strong>Taille:</strong> <span id="recap-size">Grand (~25kg)</span></p>
                     <p><strong>Quantité:</strong> <span id="recap-quantity">1</span></p>
-                    <p><strong>Acompte à payer:</strong> <span class="text-primary fw-bold">100,00 €</span></p>
+                    <p><strong>Acompte à payer:</strong> <span class="text-primary fw-bold" id="recap-deposit">100,00 €</span></p>
                 </div>
             </div>
             <hr>
@@ -32,11 +32,11 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="cardholder-name" class="form-label">Nom sur la carte</label>
-                                <input type="text" class="form-control" id="cardholder-name" placeholder="Mouhamad" required>
+                                <input type="text" class="form-control" id="cardholder-name" placeholder="Mouhamad" value="{{ $user->name }}" required>
                             </div>
                             <div class="col-md-6">
                                 <label for="cardholder-email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="cardholder-email" placeholder="exemple@email.com" required>
+                                <input type="email" class="form-control" id="cardholder-email" placeholder="exemple@email.com" value="{{ $user->email }}" required>
                             </div>
                             <div class="col-12">
                                 <label for="card-element" class="form-label">Carte de crédit</label>
@@ -58,7 +58,7 @@
         <div class="card-footer">
             <div class="d-grid">
                 <button id="submit-payment" class="btn btn-success py-3">
-                    Confirmer et payer l'acompte de 100€
+                    Confirmer et payer l'acompte
                 </button>
             </div>
         </div>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Slot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class ReservationController extends Controller
 {
@@ -15,7 +16,10 @@ class ReservationController extends Controller
             ->orderBy('date', 'asc')
             ->get();
 
-        return view('reservation.index', compact('slotCounts'));
+        $user = Auth::user();
+        $userAssociation = $user->association ? $user->association->name : 'N/A';
+
+        return view('reservation.index', compact('slotCounts', 'userAssociation', 'user'));
     }
 
     public function getSlots($date)
