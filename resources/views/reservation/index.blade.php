@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Réservation d'Agneau pour l'Eid</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -54,6 +55,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/reservation.js') }}?v={{ time() }}"></script>
     <script>console.log("URL JS:", "{{ asset('js/reservation.js') }}?v={{ time() }}");</script>
-    
+    <script>
+        // Make CSRF token globally available
+        window.csrf_token = '{{ csrf_token() }}';
+    </script>
 </body>
 </html>

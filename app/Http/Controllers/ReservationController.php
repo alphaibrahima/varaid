@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Slot;
+use App\Models\Reservation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -45,5 +46,64 @@ class ReservationController extends Controller
             $totalCapacity < 5 => 'presque_complet',
             default => 'disponible'
         };
+    }
+
+    public function confirmReservation(Request $request)
+    {
+        try {
+            \Log::info('Reservation request received:', $request->all());
+
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+
+            $validated = $request->validate([
+                'reservationNumber' => 'required|string',
+                'cardholderName' => 'required|string',
+                'cardholderEmail' => 'required|email',
+                'slotId' => 'required|integer',
+                'quantity' => 'required|integer|min:1|max:5'
+            ]);
+
+            $slot = Slot::find($validated['slotId']);
+            if (!$slot) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid slot selected'
+                ], 404);
+            }
+
+            $reservation = Reservation::create([
+                'user_id' => $user->id,
+                'slot_id' => $validated['slotId'],
+                'association_id' => $user->association ? $user->association->id : null,
+                'size' => 'grand',
+                'quantity' => $validated['quantity'],
+                'code' => $validated['reservationNumber'],
+                'status' => 'pending',
+                'date' => now()
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Réservation créée avec succès',
+                'data' => $reservation
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Reservation error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -28,7 +28,10 @@
             <div class="row mt-4">
                 <div class="col-12">
                     <h5 class="mb-3">Informations de paiement</h5>
-                    <form id="payment-form">
+                    <form id="payment-form" data-csrf="{{ csrf_token() }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                        @csrf
+
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="cardholder-name" class="form-label">Nom sur la carte</label>

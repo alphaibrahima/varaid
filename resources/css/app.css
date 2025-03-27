@@ -118,3 +118,18 @@
         width: 95%;
     }
 }
+
+.time-slot {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.time-slot:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.time-slot.selected {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}

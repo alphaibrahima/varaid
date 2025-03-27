@@ -35,6 +35,7 @@ function goToStep(step) {
         updateDeposit(); // Mettre à jour l'acompte
         updatePaymentButton(); // Mettre à jour le texte du bouton
         initStripe();
+        updateRecap();
     }
 }
 
@@ -42,13 +43,31 @@ function goToStep(step) {
 function selectDay(day) {
     selectedDay = day;
     const formattedDate = new Date(day).toLocaleDateString('fr-FR', {
-        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric'
     });
 
-    // Mettre à jour l'affichage de la date sélectionnée
-    document.getElementById('selected-day').textContent = `- ${formattedDate}`;
-    document.getElementById('recap-day').textContent = formattedDate;
-    document.getElementById('confirmation-day').textContent = formattedDate;
+    // Vérifier l'existence des éléments avant de mettre à jour leur contenu
+    const selectedDayElement = document.getElementById('selected-day');
+    const recapDayElement = document.getElementById('recap-day');
+    const confirmationDayElement = document.getElementById('confirmation-day');
+
+    if (selectedDayElement) {
+        selectedDayElement.textContent = `- ${formattedDate}`;
+    }
+    
+    if (recapDayElement) {
+        recapDayElement.textContent = formattedDate;
+    }
+    
+    if (confirmationDayElement) {
+        confirmationDayElement.textContent = formattedDate;
+    }
+
+    // Stocker la date dans localStorage
+    localStorage.setItem('selectedDay', formattedDate);
 
     // Passer la date dans l'URL en l'encodant pour éviter les erreurs
     let url = `/get-slots/${encodeURIComponent(selectedDay)}`;
@@ -65,7 +84,7 @@ function selectDay(day) {
                 response.forEach(slot => {
                     let cardHtml = `
                         <div class="col-md-4 mb-4"> <!-- Colonne avec espacement -->
-                            <div class="card creneaux-heure" onclick="selectTimeSlot('${slot.start_time}')">
+                            <div class="card creneaux-heure" onclick="selectTimeSlot('${slot.id}', '${slot.start_time}')">
                                 <div class="card-body text-center">
                                     <h5 class="card-title">${slot.start_time.substring(0, 5)}</h5>
                                     <p class="card-text"><small class="text-muted">${slot.max_reservations} places restantes</small></p>
@@ -88,13 +107,26 @@ function selectDay(day) {
 
 
 // Sélection de l'heure
-function selectTimeSlot(time) {
-    selectedTime = time;
-    document.querySelectorAll('.creneaux-heure').forEach(c => c.classList.remove('selected'));
-    event.currentTarget.classList.add('selected');
-    document.getElementById('selected-time').textContent = `- ${selectedTime}`;
-    document.getElementById('recap-time').textContent = selectedTime;
-    document.getElementById('confirmation-time').textContent = selectedTime;
+function selectTimeSlot(slotId, time) {
+    // Stocker le slot_id dans localStorage
+    localStorage.setItem('selectedSlotId', slotId);
+    localStorage.setItem('selectedTime', time);
+
+    // Mettre à jour l'UI
+    document.querySelectorAll('.time-slot').forEach(slot => {
+        slot.classList.remove('selected');
+    });
+    
+    const selectedSlot = document.querySelector(`[data-slot-id="${slotId}"]`);
+    if (selectedSlot) {
+        selectedSlot.classList.add('selected');
+        
+        // Mettre à jour le récapitulatif
+        const recapSlot = document.getElementById('recap-slot');
+        if (recapSlot) {
+            recapSlot.textContent = time;
+        }
+    }
     goToStep(3);
 }
 
@@ -201,6 +233,13 @@ function processPayment(event) {
     const submitButton = document.getElementById('submit-payment');
     const cardholderName = document.getElementById('cardholder-name').value;
     const cardholderEmail = document.getElementById('cardholder-email').value;
+
+
+    // const cardholderAssoci = document.getElementById('recap-assoc').value;
+
+    // console.log("Nom sur la carte:", cardholderName);
+    // console.log("Association:", cardholderAssoci);
+    // console.log("Email:", cardholderEmail);
     
     // Validation de base
     if (!cardholderName || !cardholderEmail) {
@@ -250,16 +289,87 @@ function processPayment(event) {
     }, 2000);
 }
 
+
 // Confirmation de la réservation
 function confirmReservation() {
-    // Générer un numéro de réservation aléatoire
-    const reservationNumber = 'R-' + Math.floor(100000 + Math.random() * 900000);
-    document.getElementById('confirmation-number').textContent = reservationNumber;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const slotId = localStorage.getItem('selectedSlotId');
     
-    // Afficher la modal de confirmation
-    // const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
-    // confirmationModal.show();
+    if (!csrfToken) {
+        console.error('CSRF token missing');
+        alert('Erreur: Token CSRF manquant');
+        return;
+    }
+
+    if (!slotId) {
+        alert('Veuillez sélectionner un créneau horaire');
+        goToStep(2);
+        return;
+    }
+
+    const data = {
+        reservationNumber: 'R-' + Math.floor(100000 + Math.random() * 900000),
+        cardholderName: document.getElementById('cardholder-name').value,
+        cardholderEmail: document.getElementById('cardholder-email').value,
+        cardholderAssoci: document.getElementById('recap-assoc').textContent,
+        slotId: parseInt(slotId),
+        quantity: parseInt(document.getElementById('quantity').value) || 1
+    };
+
+    // Debug log
+    console.log('Sending request:', {
+        url: '/reservation/confirm',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Content-Type': 'application/json'
+        },
+        data: data
+    });
+
+    fetch('/reservation/confirm', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(data)
+    })
+    .then(async response => {
+        const text = await response.text();
+        console.log('Raw response:', text);
+        
+        try {
+            const data = JSON.parse(text);
+            if (!response.ok) {
+                throw new Error(data.message || 'Server error');
+            }
+            return data;
+        } catch (e) {
+            console.error('JSON Parse error:', e);
+            throw new Error('Invalid server response');
+        }
+    })
+    .then(data => {
+        console.log('Success:', data);
+        if (data.status === 'success') {
+            localStorage.removeItem('selectedSlotId');
+            localStorage.removeItem('selectedTime');
+            alert('Réservation confirmée avec succès!');
+            window.location.href = '/dashboard';
+        } else {
+            throw new Error(data.message || 'Une erreur est survenue');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('submit-payment').disabled = false;
+        alert('Erreur lors de la confirmation: ' + error.message);
+    });
 }
+
 
 // Fonction pour mettre à jour le bouton de paiement
 function updatePaymentButton() {
@@ -267,4 +377,37 @@ function updatePaymentButton() {
     const deposit = quantity * 100; // 100€ par unité
     const paymentButton = document.getElementById('submit-payment');
     paymentButton.textContent = `Confirmer et payer l'acompte de ${deposit},00 €`;
+}
+
+// Fonction pour afficher les créneaux horaires
+function displaySlots(slots) {
+    const container = document.getElementById('slots-container');
+    container.innerHTML = '';
+
+    slots.forEach(slot => {
+        const slotElement = document.createElement('div');
+        slotElement.className = 'col-md-4 mb-3';
+        slotElement.innerHTML = `
+            <div class="time-slot card" 
+                 data-slot-id="${slot.id}" 
+                 onclick="selectTimeSlot(${slot.id}, '${slot.start_time}')">
+                <div class="card-body text-center">
+                    <h5 class="card-title">${slot.start_time}</h5>
+                    <p class="card-text">Places disponibles: ${slot.capacity}</p>
+                </div>
+            </div>
+        `;
+        container.appendChild(slotElement);
+    });
+}
+
+// Fonction pour mettre à jour le récapitulatif
+function updateRecap() {
+    const selectedTime = localStorage.getItem('selectedTime');
+    const selectedSize = localStorage.getItem('selectedSize') || 'grand';
+    const quantity = document.getElementById('quantity').value;
+
+    document.getElementById('recap-slot').textContent = selectedTime || 'Non sélectionné';
+    document.getElementById('recap-size').textContent = selectedSize.charAt(0).toUpperCase() + selectedSize.slice(1);
+    document.getElementById('recap-quantity').textContent = quantity;
 }
