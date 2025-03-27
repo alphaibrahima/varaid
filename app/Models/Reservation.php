@@ -21,6 +21,11 @@ class Reservation extends Model
         'payment_intent_id' // AJOUTER (si manquant)
     ];
 
+    protected $casts = [
+        'date' => 'datetime',
+        'association_id' => 'integer',
+    ];
+
     // Corriger la relation association
     public function association()
     {

@@ -14,6 +14,10 @@ Route::middleware(['auth', 'web'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::post('/reservation/confirm', [ReservationController::class, 'confirmReservation'])
         ->name('reservation.confirm');
+    Route::get('/reservation/receipt/{code}', [ReservationController::class, 'showReceipt'])
+        ->name('reservation.receipt');
+    Route::get('/reservation/receipt/{code}/download', [ReservationController::class, 'downloadReceipt'])
+        ->name('reservation.receipt.download');
 });
 
 // Routes d'authentification

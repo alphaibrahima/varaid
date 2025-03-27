@@ -12,6 +12,9 @@
     <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
+    @php
+        use Carbon\Carbon;
+    @endphp
     <div class="container py-5">
         @yield('content')
     </div>

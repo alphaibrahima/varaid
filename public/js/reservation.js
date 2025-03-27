@@ -316,16 +316,6 @@ function confirmReservation() {
         quantity: parseInt(document.getElementById('quantity').value) || 1
     };
 
-    // Debug log
-    console.log('Sending request:', {
-        url: '/reservation/confirm',
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-            'Content-Type': 'application/json'
-        },
-        data: data
-    });
-
     fetch('/reservation/confirm', {
         method: 'POST',
         headers: {
@@ -337,35 +327,29 @@ function confirmReservation() {
         credentials: 'same-origin',
         body: JSON.stringify(data)
     })
-    .then(async response => {
-        const text = await response.text();
-        console.log('Raw response:', text);
-        
-        try {
-            const data = JSON.parse(text);
-            if (!response.ok) {
-                throw new Error(data.message || 'Server error');
-            }
-            return data;
-        } catch (e) {
-            console.error('JSON Parse error:', e);
-            throw new Error('Invalid server response');
-        }
-    })
+    .then(response => response.json())
     .then(data => {
-        console.log('Success:', data);
+        console.log('Response:', data);
         if (data.status === 'success') {
+            // Clear localStorage
             localStorage.removeItem('selectedSlotId');
             localStorage.removeItem('selectedTime');
+            
+            // Show success message
             alert('Réservation confirmée avec succès!');
-            window.location.href = '/dashboard';
+            
+            // Redirect to receipt page using the URL from response
+            if (data.redirectUrl) {
+                window.location.href = data.redirectUrl;
+            } else {
+                console.error('No redirect URL provided');
+            }
         } else {
             throw new Error(data.message || 'Une erreur est survenue');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        document.getElementById('submit-payment').disabled = false;
         alert('Erreur lors de la confirmation: ' + error.message);
     });
 }

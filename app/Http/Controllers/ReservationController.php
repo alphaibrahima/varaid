@@ -7,6 +7,8 @@ use App\Models\Reservation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use PDF;
+use Carbon\Carbon;
 
 class ReservationController extends Controller
 {
@@ -61,21 +63,14 @@ class ReservationController extends Controller
                 ], 401);
             }
 
+            // Validate the request
             $validated = $request->validate([
                 'reservationNumber' => 'required|string',
                 'cardholderName' => 'required|string',
                 'cardholderEmail' => 'required|email',
-                'slotId' => 'required|integer',
+                'slotId' => 'required|integer|exists:slots,id',
                 'quantity' => 'required|integer|min:1|max:5'
             ]);
-
-            $slot = Slot::find($validated['slotId']);
-            if (!$slot) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Invalid slot selected'
-                ], 404);
-            }
 
             $reservation = Reservation::create([
                 'user_id' => $user->id,
@@ -85,13 +80,15 @@ class ReservationController extends Controller
                 'quantity' => $validated['quantity'],
                 'code' => $validated['reservationNumber'],
                 'status' => 'pending',
-                'date' => now()
+                'date' => now(),
             ]);
 
+            // Return success response with redirect URL
             return response()->json([
                 'status' => 'success',
                 'message' => 'Réservation créée avec succès',
-                'data' => $reservation
+                'data' => $reservation,
+                'redirectUrl' => route('reservation.receipt', ['code' => $reservation->code])
             ]);
 
         } catch (\Exception $e) {
@@ -105,5 +102,30 @@ class ReservationController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function showReceipt($code)
+    {
+        $reservation = Reservation::with(['user', 'slot', 'association'])
+            ->where('code', $code)
+            ->firstOrFail();
+
+        // Convert date string to Carbon instance if it's not already
+        $reservation->date = $reservation->date instanceof Carbon 
+            ? $reservation->date 
+            : Carbon::parse($reservation->date);
+
+        return view('reservation.receipt', compact('reservation'));
+    }
+
+    public function downloadReceipt($code)
+    {
+        $reservation = Reservation::with(['user', 'slot', 'association'])
+            ->where('code', $code)
+            ->firstOrFail();
+
+        $pdf = PDF::loadView('reservation.receipt-pdf', compact('reservation'));
+        
+        return $pdf->download('recu-reservation-' . $code . '.pdf');
     }
 }
