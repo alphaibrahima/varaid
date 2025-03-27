@@ -257,8 +257,8 @@ function confirmReservation() {
     document.getElementById('confirmation-number').textContent = reservationNumber;
     
     // Afficher la modal de confirmation
-    const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
-    confirmationModal.show();
+    // const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    // confirmationModal.show();
 }
 
 // Fonction pour mettre à jour le bouton de paiement
