@@ -12,10 +12,10 @@
                     <label class="form-label">Quantité</label>
                     <div class="input-group">
                         <button class="btn btn-outline-secondary" type="button" onclick="decrementQuantity()">−</button>
-                        <input type="number" class="form-control text-center" id="quantity" value="1" min="1" max="5" readonly>
+                        <input type="number" class="form-control text-center" id="quantity" value="1" min="1" max="4" readonly>
                         <button class="btn btn-outline-secondary" type="button" onclick="incrementQuantity()">+</button>
                     </div>
-                    <small class="form-text text-muted">Maximum 5 agneaux par réservation</small>
+                    <small class="form-text text-muted">Maximum 4 agneaux par réservation</small>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Taille</label>

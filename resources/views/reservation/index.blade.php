@@ -89,9 +89,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/reservation.js') }}?v={{ time() }}"></script>
     <script>console.log("URL JS:", "{{ asset('js/reservation.js') }}?v={{ time() }}");</script>
+
+
     <script>
-        // Make CSRF token globally available
+        // Make CSRF token and user info globally available
         window.csrf_token = '{{ csrf_token() }}';
+        window.userInfo = {
+            name: '{{ $user->name }}',
+            // Si vous avez les champs séparés de prénom et nom dans votre base de données, utilisez-les
+            firstName: '{{ $user->first_name ?? explode(" ", $user->name)[0] }}',
+            lastName: '{{ $user->last_name ?? (count(explode(" ", $user->name)) > 1 ? explode(" ", $user->name)[1] : "") }}',
+            email: '{{ $user->email }}'
+        };
     </script>
 </body>
 </html>

@@ -54,7 +54,7 @@ class ReservationController extends Controller
     {
         try {
             \Log::info('Reservation request received:', $request->all());
-
+    
             $user = Auth::user();
             if (!$user) {
                 return response()->json([
@@ -62,16 +62,19 @@ class ReservationController extends Controller
                     'message' => 'User not authenticated'
                 ], 401);
             }
-
+    
             // Validate the request
             $validated = $request->validate([
                 'reservationNumber' => 'required|string',
                 'cardholderName' => 'required|string',
                 'cardholderEmail' => 'required|email',
                 'slotId' => 'required|integer|exists:slots,id',
-                'quantity' => 'required|integer|min:1|max:5'
+                'quantity' => 'required|integer|min:1|max:5',
+                'owners' => 'required|array|min:1',
+                'owners.*.firstname' => 'required|string',
+                'owners.*.lastname' => 'required|string'
             ]);
-
+    
             $reservation = Reservation::create([
                 'user_id' => $user->id,
                 'slot_id' => $validated['slotId'],
@@ -81,8 +84,9 @@ class ReservationController extends Controller
                 'code' => $validated['reservationNumber'],
                 'status' => 'pending',
                 'date' => now(),
+                'owners_data' => json_encode($validated['owners']), // Stockage des informations propriétaires
             ]);
-
+    
             // Return success response with redirect URL
             return response()->json([
                 'status' => 'success',
@@ -90,13 +94,13 @@ class ReservationController extends Controller
                 'data' => $reservation,
                 'redirectUrl' => route('reservation.receipt', ['code' => $reservation->code])
             ]);
-
+    
         } catch (\Exception $e) {
             \Log::error('Reservation error:', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-
+    
             return response()->json([
                 'status' => 'error',
                 'message' => $e->getMessage()

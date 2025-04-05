@@ -32,10 +32,10 @@ function goToStep(step) {
     
     // Initialiser Stripe et mettre à jour le bouton si on est à l'étape 4
     if (step === 4) {
+        updateRecap(); // Met à jour le récapitulatif et génère les champs propriétaires
         updateDeposit(); // Mettre à jour l'acompte
         updatePaymentButton(); // Mettre à jour le texte du bouton
         initStripe();
-        updateRecap();
     }
 }
 
@@ -138,27 +138,43 @@ function updateDeposit() {
     depositElement.textContent = `${deposit},00 €`;
 }
 
-// Incrémentation de la quantité
+// Incrémentation de la quantité (modifiée pour mettre à jour les champs propriétaires)
 function incrementQuantity() {
     const quantityInput = document.getElementById('quantity');
     if (parseInt(quantityInput.value) < parseInt(quantityInput.max)) {
         selectedQuantity = parseInt(quantityInput.value) + 1;
         quantityInput.value = selectedQuantity;
-        document.getElementById('recap-quantity').textContent = selectedQuantity;
-        document.getElementById('confirmation-quantity').textContent = selectedQuantity;
+        
+        // Mettre à jour le récapitulatif
+        if (document.getElementById('recap-quantity')) {
+            document.getElementById('recap-quantity').textContent = selectedQuantity;
+        }
+        if (document.getElementById('confirmation-quantity')) {
+            document.getElementById('confirmation-quantity').textContent = selectedQuantity;
+        }
+        
         updateDeposit(); // Mettre à jour l'acompte
+        generateOwnerFields(); // Mettre à jour les champs propriétaires
     }
 }
 
-// Décrémentation de la quantité
+// Décrémentation de la quantité (modifiée pour mettre à jour les champs propriétaires)
 function decrementQuantity() {
     const quantityInput = document.getElementById('quantity');
     if (parseInt(quantityInput.value) > parseInt(quantityInput.min)) {
         selectedQuantity = parseInt(quantityInput.value) - 1;
         quantityInput.value = selectedQuantity;
-        document.getElementById('recap-quantity').textContent = selectedQuantity;
-        document.getElementById('confirmation-quantity').textContent = selectedQuantity;
+        
+        // Mettre à jour le récapitulatif
+        if (document.getElementById('recap-quantity')) {
+            document.getElementById('recap-quantity').textContent = selectedQuantity;
+        }
+        if (document.getElementById('confirmation-quantity')) {
+            document.getElementById('confirmation-quantity').textContent = selectedQuantity;
+        }
+        
         updateDeposit(); // Mettre à jour l'acompte
+        generateOwnerFields(); // Mettre à jour les champs propriétaires
     }
 }
 
@@ -171,6 +187,66 @@ function selectSize(size) {
     let sizeText = size === 'grand' ? 'Grand (~25kg)' : 'Moyen (~18kg)';
     document.getElementById('recap-size').textContent = sizeText;
     document.getElementById('confirmation-size').textContent = sizeText;
+}
+
+
+// Générer les champs de propriétaires en fonction de la quantité
+function generateOwnerFields() {
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
+    const container = document.getElementById('owners-container');
+    
+    // Vider le conteneur avant de générer les nouveaux champs
+    if (container) {
+        container.innerHTML = '';
+        
+        // Générer les champs pour chaque agneau
+        for (let i = 1; i <= quantity; i++) {
+            const ownerSection = document.createElement('div');
+            ownerSection.className = 'card mb-3';
+            
+            // Déterminer si c'est le premier agneau (celui du propriétaire principal)
+            const isFirstOwner = (i === 1);
+            const headerText = isFirstOwner ? 'Agneau #1 (Vous-même)' : `Agneau #${i}`;
+            
+            // Préparer les valeurs par défaut pour le premier propriétaire
+            let firstNameValue = '';
+            let lastNameValue = '';
+            let readOnlyAttr = '';
+            
+            if (isFirstOwner && window.userInfo) {
+                firstNameValue = window.userInfo.firstName || '';
+                lastNameValue = window.userInfo.lastName || '';
+                // Option: rendre les champs en lecture seule pour le premier propriétaire
+                // readOnlyAttr = 'readonly';
+            }
+            
+            ownerSection.innerHTML = `
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">${headerText}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="owner-firstname-${i}" class="form-label">Prénom</label>
+                            <input type="text" class="form-control owner-input" id="owner-firstname-${i}" 
+                                name="owners[${i}][firstname]" value="${firstNameValue}" ${readOnlyAttr} required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="owner-lastname-${i}" class="form-label">Nom</label>
+                            <input type="text" class="form-control owner-input" id="owner-lastname-${i}" 
+                                name="owners[${i}][lastname]" value="${lastNameValue}" ${readOnlyAttr} required>
+                        </div>
+                    </div>
+                    ${isFirstOwner ? `
+                    <div class="form-text text-muted mt-2">
+                        <i class="bi bi-info-circle"></i> Ces informations sont pré-remplies avec votre profil.
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            container.appendChild(ownerSection);
+        }
+    }
 }
 
 // Variables Stripe
@@ -227,23 +303,44 @@ function initStripe() {
 }
 
 // Fonction pour traiter le paiement
+// Fonction pour traiter le paiement
 function processPayment(event) {
     if (event) event.preventDefault();
     
     const submitButton = document.getElementById('submit-payment');
     const cardholderName = document.getElementById('cardholder-name').value;
     const cardholderEmail = document.getElementById('cardholder-email').value;
-
-
-    // const cardholderAssoci = document.getElementById('recap-assoc').value;
-
-    // console.log("Nom sur la carte:", cardholderName);
-    // console.log("Association:", cardholderAssoci);
-    // console.log("Email:", cardholderEmail);
     
     // Validation de base
     if (!cardholderName || !cardholderEmail) {
-        alert('Veuillez remplir tous les champs');
+        alert('Veuillez remplir tous les champs de paiement');
+        return;
+    }
+    
+    // Valider les champs des propriétaires
+    const ownerInputs = document.querySelectorAll('.owner-input');
+    let allOwnersValid = true;
+    let ownersData = [];
+    
+    // Regrouper les données des propriétaires
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
+    for (let i = 1; i <= quantity; i++) {
+        const firstname = document.getElementById(`owner-firstname-${i}`).value;
+        const lastname = document.getElementById(`owner-lastname-${i}`).value;
+        
+        if (!firstname || !lastname) {
+            allOwnersValid = false;
+            break;
+        }
+        
+        ownersData.push({
+            firstname: firstname,
+            lastname: lastname
+        });
+    }
+    
+    if (!allOwnersValid) {
+        alert('Veuillez remplir les noms et prénoms pour tous les propriétaires');
         return;
     }
     
@@ -251,56 +348,9 @@ function processPayment(event) {
     submitButton.disabled = true;
     submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Traitement en cours...';
     
-    // Dans un environnement de production, vous devriez faire un appel à votre serveur
-    // pour créer un PaymentIntent et récupérer le client_secret
-    
-    // Simulation d'une requête et d'une réponse
-    setTimeout(function() {
-        // Simuler un appel réussi à Stripe
-        submitButton.disabled = false;
-        submitButton.innerHTML = 'Confirmer et payer l\'acompte de 100€';
-        
-        // Dans un environnement réel, vous utiliseriez ce code:
-        /*
-        stripe.confirmCardPayment('client_secret_de_votre_serveur', {
-            payment_method: {
-                card: card,
-                billing_details: {
-                    name: cardholderName,
-                    email: cardholderEmail
-                }
-            }
-        }).then(function(result) {
-            if (result.error) {
-                // Afficher l'erreur
-                const errorElement = document.getElementById('card-errors');
-                errorElement.textContent = result.error.message;
-                submitButton.disabled = false;
-                submitButton.innerHTML = 'Confirmer et payer l\'acompte de 200€';
-            } else {
-                // Paiement réussi
-                confirmReservation();
-            }
-        });
-        */
-        
-        // Pour l'exemple, nous allons directement confirmer la réservation
-        confirmReservation();
-    }, 2000);
-}
-
-
-// Confirmation de la réservation
-function confirmReservation() {
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    // Récupérer les données pour la requête
     const slotId = localStorage.getItem('selectedSlotId');
     
-    if (!csrfToken) {
-        console.error('CSRF token missing');
-        alert('Erreur: Token CSRF manquant');
-        return;
-    }
-
     if (!slotId) {
         alert('Veuillez sélectionner un créneau horaire');
         goToStep(2);
@@ -309,12 +359,37 @@ function confirmReservation() {
 
     const data = {
         reservationNumber: 'R-' + Math.floor(100000 + Math.random() * 900000),
-        cardholderName: document.getElementById('cardholder-name').value,
-        cardholderEmail: document.getElementById('cardholder-email').value,
-        cardholderAssoci: document.getElementById('recap-assoc').textContent,
+        cardholderName: cardholderName,
+        cardholderEmail: cardholderEmail,
         slotId: parseInt(slotId),
-        quantity: parseInt(document.getElementById('quantity').value) || 1
+        quantity: quantity,
+        owners: ownersData
     };
+    
+    // Dans un environnement de production, vous devriez faire un appel à votre serveur
+    // pour créer un PaymentIntent et récupérer le client_secret
+    
+    // Simuler un appel réussi (pour test)
+    setTimeout(function() {
+        // Réactiver le bouton
+        submitButton.disabled = false;
+        submitButton.innerHTML = 'Confirmer et payer l\'acompte';
+        
+        // Pour l'exemple, nous allons directement confirmer la réservation
+        confirmReservation(data);
+    }, 2000);
+}
+
+
+// Modifier la fonction confirmReservation pour inclure les données des propriétaires
+function confirmReservation(paymentData) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    if (!csrfToken) {
+        console.error('CSRF token missing');
+        alert('Erreur: Token CSRF manquant');
+        return;
+    }
 
     fetch('/reservation/confirm', {
         method: 'POST',
@@ -325,7 +400,7 @@ function confirmReservation() {
             'X-Requested-With': 'XMLHttpRequest'
         },
         credentials: 'same-origin',
-        body: JSON.stringify(data)
+        body: JSON.stringify(paymentData)
     })
     .then(response => response.json())
     .then(data => {
@@ -386,12 +461,26 @@ function displaySlots(slots) {
 }
 
 // Fonction pour mettre à jour le récapitulatif
+// Mise à jour du récapitulatif et des champs de propriétaires
 function updateRecap() {
     const selectedTime = localStorage.getItem('selectedTime');
     const selectedSize = localStorage.getItem('selectedSize') || 'grand';
     const quantity = document.getElementById('quantity').value;
 
-    document.getElementById('recap-slot').textContent = selectedTime || 'Non sélectionné';
-    document.getElementById('recap-size').textContent = selectedSize.charAt(0).toUpperCase() + selectedSize.slice(1);
-    document.getElementById('recap-quantity').textContent = quantity;
+    // Mettre à jour les informations de récapitulation
+    if (document.getElementById('recap-time')) {
+        document.getElementById('recap-time').textContent = selectedTime || 'Non sélectionné';
+    }
+    if (document.getElementById('recap-size')) {
+        document.getElementById('recap-size').textContent = selectedSize === 'grand' ? 'Grand (~25kg)' : 'Moyen (~18kg)';
+    }
+    if (document.getElementById('recap-quantity')) {
+        document.getElementById('recap-quantity').textContent = quantity;
+    }
+    
+    // Générer les champs de propriétaires
+    generateOwnerFields();
+    
+    // Mettre à jour l'acompte
+    updateDeposit();
 }

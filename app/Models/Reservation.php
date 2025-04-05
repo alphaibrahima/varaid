@@ -13,18 +13,20 @@ class Reservation extends Model
     protected $fillable = [
         'user_id', 
         'slot_id', 
-        'association_id', // AJOUTER
+        'association_id', 
         'size', 
-        'quantity', // AJOUTER (si manquant)
+        'quantity', 
+        'owners_data',
         'code', 
         'status',
-        'date', // AJOUTER (si manquant)
-        'payment_intent_id' // AJOUTER (si manquant)
+        'date', 
+        'payment_intent_id' 
     ];
 
     protected $casts = [
         'date' => 'datetime',
         'association_id' => 'integer',
+        'owners_data' => 'array',
     ];
 
     // Corriger la relation association

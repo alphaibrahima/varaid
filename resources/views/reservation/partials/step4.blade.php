@@ -24,6 +24,18 @@
             </div>
             <hr>
             
+            <!-- Nouvelle section: Informations des propriétaires -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h5 class="mb-3">Informations des propriétaires</h5>
+                    <p class="text-muted mb-3">Veuillez indiquer les noms et prénoms des propriétaires pour chaque agneau.</p>
+                    
+                    <div id="owners-container">
+                        <!-- Les champs seront générés dynamiquement ici -->
+                    </div>
+                </div>
+            </div>
+            
             <!-- Formulaire de paiement Stripe -->
             <div class="row mt-4">
                 <div class="col-12">
