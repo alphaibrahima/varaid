@@ -4,15 +4,27 @@
     <meta charset="utf-8">
     <style>
         body { font-family: Arial, sans-serif; }
-        .header { text-align: center; margin-bottom: 30px; }
+        .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            position: relative; 
+        }
+        .logo {
+            position: absolute;
+            left: 0;
+            top: 0;
+            max-width: 100px; /* Ajustez la taille selon vos besoins */
+            max-height: 100px;
+        }
         .details { margin-bottom: 20px; }
         .footer { text-align: center; margin-top: 50px; }
     </style>
 </head>
 <body>
     <div class="header">
+        <img src="{{ public_path('img/logo.jpeg') }}" alt="Logo" class="logo">
         <h1>Reçu de Réservation</h1>
-        <h2>{{ config('app.name') }}</h2>
+        {{-- <h2>{{ config('app.name') }}</h2> --}}
     </div>
 
     <div class="details">

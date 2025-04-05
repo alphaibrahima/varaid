@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -43,9 +44,12 @@ class Reservation extends Model
         return $this->belongsTo(Slot::class);
     }
 
-
-    // public function association()
-    // {
-    //     return $this->belongsTo(Association::class); // MODIFIER (au lieu de User)
-    // }
+    /**
+     * Scope a query to only include reservations from the current month.
+     */
+    public function scopeThisMonth(Builder $query): Builder
+    {
+        return $query->whereMonth('created_at', now()->month)
+                    ->whereYear('created_at', now()->year);
+    }
 }

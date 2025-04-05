@@ -13,6 +13,40 @@
     <link rel="stylesheet" href="{{asset('css/template/style.css')}}">
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="#"> Varaid </a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    @auth
+                        {{-- <li class="nav-item">
+                            <a class="nav-link" href="{{ route('dashboard') }}">Dashboard</a>
+                        </li> --}}
+                        <li class="nav-item">
+                            <!-- Formulaire de déconnexion -->
+                            <form method="POST" action="{{ route('logout') }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-link nav-link" style="display: inline; padding: 0;">
+                                    Déconnexion
+                                </button>
+                            </form>
+                        </li>
+                    @endauth
+
+                    @guest
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('login') }}">Connexion</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('register') }}">Inscription</a>
+                        </li>
+                    @endguest
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
     <div class="container py-5">
         <div class="page-container">
             <h1 class="text-center mb-5">Réservation d'Agneau pour l'Eid</h1>

@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Resources\AcheteurResource;
+use App\Filament\Pages\Dashboard;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -19,6 +20,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
+
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -29,9 +31,9 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName('Gestion des Réservations')
-            ->favicon(asset('images/favicon.ico')) // Optionnel : ajoutez un favicon
+            ->favicon(asset('images/favicon.ico'))
             ->colors([
-                'primary' => Color::Sky, // Changement de couleur pour plus de professionnalisme
+                'primary' => Color::Sky,
                 'secondary' => Color::Emerald,
             ])
             ->navigationGroups([
@@ -40,19 +42,14 @@ class AdminPanelProvider extends PanelProvider
                 'Paramètres'
             ])
             ->resources([
-                AcheteurResource::class, // Ajout explicite de la ressource
-                // ... autres ressources ici
+                AcheteurResource::class,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
-            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
-            ])
+            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
+            ->widgets([])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -61,14 +58,12 @@ class AdminPanelProvider extends PanelProvider
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,
-                DisableBladeIconComponents::class,
-                DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
             ])
-            ->databaseTransactions() // Active les transactions de base de données
-            ->sidebarCollapsibleOnDesktop() // Menu pliable sur desktop
-            ->globalSearchKeyBindings(['command+k', 'ctrl+k']); // Raccourci recherche
+            ->databaseTransactions()
+            ->sidebarCollapsibleOnDesktop()
+            ->globalSearchKeyBindings(['command+k', 'ctrl+k']);
     }
 }
