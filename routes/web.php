@@ -47,15 +47,12 @@ Route::get('/payment-success', [App\Http\Controllers\PaymentController::class, '
     ->middleware('auth');
 
 // Dans routes/web.php
-Route::get('/test-stripe-config', function () {
-    $stripeKey = config('services.stripe.key');
-    $stripeSecret = config('services.stripe.secret');
-    
+// Route temporaire pour tester les clés Stripe
+Route::get('/test-stripe-keys', function() {
     return [
-        'key_exists' => !empty($stripeKey),
-        'key_prefix' => substr($stripeKey, 0, 7), // Affiche juste le début pour la sécurité
-        'secret_exists' => !empty($stripeSecret),
-        'secret_prefix' => substr($stripeSecret, 0, 7),
+        'public_key' => config('services.stripe.key'),
+        'secret_key' => substr(config('services.stripe.secret'), 0, 10) . '...',
+        'keys_exist' => !empty(config('services.stripe.key')) && !empty(config('services.stripe.secret'))
     ];
 });
 

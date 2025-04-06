@@ -101,6 +101,9 @@
             lastName: '{{ $user->last_name ?? (count(explode(" ", $user->name)) > 1 ? explode(" ", $user->name)[1] : "") }}',
             email: '{{ $user->email }}'
         };
+        window.stripeConfig = {
+            publicKey: "{{ config('services.stripe.key') }}"
+        };
     </script>
 </body>
 </html>

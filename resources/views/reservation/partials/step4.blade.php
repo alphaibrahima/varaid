@@ -47,19 +47,26 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="cardholder-name" class="form-label">Nom sur la carte</label>
-                                <input type="text" class="form-control" id="cardholder-name" placeholder="Nom complet" value="{{ $user->name }}" required>
+                                <input type="text" class="form-control" id="cardholder-name" placeholder="Mouhamad" value="{{ $user->name }}" required>
                             </div>
                             <div class="col-md-6">
                                 <label for="cardholder-email" class="form-label">Email</label>
                                 <input type="email" class="form-control" id="cardholder-email" placeholder="exemple@email.com" value="{{ $user->email }}" required>
                             </div>
                             <div class="col-12">
-                                <label for="payment-element" class="form-label">Paiement</label>
-                                <div id="payment-element" class="form-control p-3" style="height: auto; min-height: 150px;">
-                                    <!-- L'élément de paiement Stripe sera inséré ici -->
-                                </div>
+                                <label for="payment-element" class="form-label">Informations de paiement</label>
+                                <!-- Changé de card-element à payment-element pour correspondre au JS -->
+                                <div id="payment-element" class="form-control p-3" style="height: auto; min-height: 150px;"></div>
+                                <!-- Changé aussi l'id des erreurs pour correspondre au JS -->
                                 <div id="payment-errors" class="text-danger mt-2" role="alert"></div>
                             </div>
+                        </div>
+                        
+                        <div class="alert alert-info mt-3">
+                            <small>
+                                <i class="bi bi-info-circle"></i> En confirmant cette réservation, vous vous engagez à verser un acompte de 100€. 
+                                Le solde sera à régler le jour de la récupération. Une notification vous sera envoyée par email et SMS avec tous les détails.
+                            </small>
                         </div>
                         
                         <div class="d-grid mt-4">
@@ -70,52 +77,6 @@
                     </form>
                 </div>
             </div>
-            
-            <div class="alert alert-info mt-3">
-                <small>
-                    <i class="bi bi-info-circle"></i> En confirmant cette réservation, vous vous engagez à verser un acompte de 100€. 
-                    Le solde sera à régler le jour de la récupération. Une notification vous sera envoyée par email et SMS avec tous les détails.
-                </small>
-            </div>
-        </div>
-        <div class="card-footer">
-            <div class="d-grid">
-                <button id="submit-payment" class="btn btn-success py-3">
-                    Confirmer et payer l'acompte
-                </button>
-            </div>
         </div>
     </div>
 </div>
-
-<!-- Débogage Stripe -->
-<div class="mt-3 border p-3 bg-light d-none" id="stripe-debug">
-    <h6>Informations de débogage</h6>
-    <div id="debug-output"></div>
-</div>
-
-<script>
-// Fonction d'aide pour le débogage
-function debugStripe(message, data = null) {
-    const debugElement = document.getElementById('debug-output');
-    const debugContainer = document.getElementById('stripe-debug');
-    
-    if (debugElement && debugContainer) {
-        debugContainer.classList.remove('d-none');
-        const entry = document.createElement('div');
-        entry.className = 'debug-entry mb-2';
-        entry.innerHTML = `<strong>${message}</strong>`;
-        
-        if (data) {
-            const pre = document.createElement('pre');
-            pre.className = 'small mt-1 mb-0 bg-white p-2';
-            pre.textContent = JSON.stringify(data, null, 2);
-            entry.appendChild(pre);
-        }
-        
-        debugElement.appendChild(entry);
-    }
-    
-    console.log(message, data);
-}
-</script>

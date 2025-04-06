@@ -383,51 +383,46 @@ function generateOwnerFields() {
 let stripe;
 let elements;
 let paymentElement;
-let paymentIntentId;
 
 // Initialisation de Stripe
-function initStripe() {
-    stripe = Stripe('pk_test_51JUagXA0Pqxe87f5oHIjCKz43aDvkqkxbxmI7i8pLnr4ynfnvo9Caf9qARxP5SZ8MhOwyABy1KOowNuZAI6NpIN5006xdGeAd9');
-    
-    // Récupérer les données nécessaires pour créer une intention de paiement
-    const slotId = localStorage.getItem('selectedSlotId');
-    const quantity = parseInt(document.getElementById('quantity').value) || 1;
-    
-    // Désactiver le bouton pendant le chargement
-    const submitButton = document.getElementById('submit-payment');
-    if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Chargement...';
-    }
-    
-    // Créer une intention de paiement côté serveur
-    createPaymentIntent(slotId, quantity).then(({clientSecret, paymentIntentId: intentId}) => {
-        paymentIntentId = intentId;
+async function initStripe() {
+    try {
+        console.log('Initialisation de Stripe');
         
-        // Créer les éléments Stripe avec le client secret reçu
+        const slotId = localStorage.getItem('selectedSlotId');
+        const quantity = parseInt(document.getElementById('quantity').value) || 1;
+        
+        // Désactiver le bouton pendant le chargement
+        const submitButton = document.getElementById('submit-payment');
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Chargement...';
+        }
+        
+        // Créer une intention de paiement
+        const { clientSecret, paymentIntentId } = await createPaymentIntent(slotId, quantity);
+        console.log('PaymentIntent créé avec succès:', { clientSecret: '***', paymentIntentId });
+        
+        // Initialiser Stripe avec la clé publique
+        // stripe = Stripe('pk_test_51JUagXA0Pqxe87f5NFHuEKUQO0xyy8UIUzzlUbTlnc9ixFC30N0x1DCzSFrTDaLrgBmDUmBDRnJEQnOd9vf1U5Bq00uag0krea');        
+        stripe = Stripe(window.stripeConfig.publicKey);
+        // Vérifier si l'élément existe
+        const paymentElementContainer = document.getElementById('payment-element');
+        if (!paymentElementContainer) {
+            throw new Error("L'élément #payment-element n'existe pas dans le DOM");
+        }
+        
+        // Créer les éléments Stripe
         elements = stripe.elements({
-            clientSecret: clientSecret,
+            clientSecret,
             appearance: {
                 theme: 'stripe',
-                variables: {
-                    colorPrimary: '#0066cc',
-                }
-            },
+            }
         });
-
+        
         // Créer et monter l'élément de paiement
         paymentElement = elements.create('payment');
         paymentElement.mount('#payment-element');
-        
-        // Écouter les événements de changement
-        paymentElement.on('change', (event) => {
-            const displayError = document.getElementById('payment-errors');
-            if (event.error) {
-                displayError.textContent = event.error.message;
-            } else {
-                displayError.textContent = '';
-            }
-        });
         
         // Réactiver le bouton
         if (submitButton) {
@@ -435,70 +430,60 @@ function initStripe() {
             submitButton.innerHTML = `Confirmer et payer l'acompte de ${quantity * 100},00 €`;
         }
         
-        // Ajouter un gestionnaire d'événements pour la soumission du formulaire
+        // Écouter la soumission du formulaire
         const form = document.getElementById('payment-form');
         if (form) {
             form.addEventListener('submit', handlePaymentSubmission);
         }
-    }).catch(error => {
+    } catch (error) {
         console.error('Error initializing Stripe:', error);
         alert('Une erreur est survenue lors de l\'initialisation du paiement. Veuillez réessayer.');
         
         // Réactiver le bouton en cas d'erreur
+        const submitButton = document.getElementById('submit-payment');
         if (submitButton) {
             submitButton.disabled = false;
             submitButton.innerHTML = 'Réessayer';
         }
-    });
-
-    // Dans initStripe()
-    debugStripe('Initialisation de Stripe avec la clé publique', 'pk_test_...');
-    // Après avoir reçu le clientSecret
-    debugStripe('ClientSecret obtenu', { id: paymentIntentId, hasSecret: !!clientSecret });
-}
-
-// Fonction pour créer une intention de paiement côté serveur
-async function createPaymentIntent(slotId, quantity) {
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    
-    try {
-        console.log('Envoi de la requête create-payment-intent avec slotId:', slotId, 'et quantity:', quantity);
-        
-        const response = await fetch('/create-payment-intent', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({
-                slotId: slotId,
-                quantity: quantity
-            })
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Erreur API:', errorData);
-            throw new Error(errorData.error || 'Erreur lors de la création de l\'intention de paiement');
-        }
-        
-        const data = await response.json();
-        console.log('Réponse create-payment-intent:', data);
-        return data;
-    } catch (error) {
-        console.error('Erreur complète:', error);
-        throw error;
     }
 }
 
-// Gérer la soumission du formulaire de paiement
+// Fonction pour créer une intention de paiement
+async function createPaymentIntent(slotId, quantity) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    console.log('Envoi de la requête create-payment-intent avec slotId:', slotId, 'et quantity:', quantity);
+    
+    const response = await fetch('/create-payment-intent', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            slotId: slotId,
+            quantity: quantity
+        })
+    });
+    
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Réponse HTTP non-OK:', response.status, errorText);
+        throw new Error(`Erreur HTTP ${response.status}: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('Réponse create-payment-intent:', data);
+    return data;
+}
+
+// Traitement du paiement
 async function handlePaymentSubmission(e) {
     e.preventDefault();
     
-    // Valider les champs des propriétaires
+    // Valider les champs propriétaires
     if (!validateOwnerFields()) {
-        alert('Veuillez remplir les noms et prénoms pour tous les propriétaires');
         return;
     }
     
@@ -508,31 +493,43 @@ async function handlePaymentSubmission(e) {
         submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Traitement en cours...';
     }
     
-    // Collecter les données des propriétaires
     const ownersData = collectOwnersData();
     
-    // Confirmer le paiement
-    const { error } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-            return_url: `${window.location.origin}/payment-success?owners=${encodeURIComponent(JSON.stringify(ownersData))}`,
-        },
-        redirect: 'if_required',
-    });
-    
-    if (error) {
-        // Afficher le message d'erreur à l'utilisateur
-        const errorElement = document.getElementById('payment-errors');
-        errorElement.textContent = error.message;
+    try {
+        // Confirmer le paiement avec Stripe
+        const { error } = await stripe.confirmPayment({
+            elements,
+            confirmParams: {
+                return_url: `${window.location.origin}/payment-success`,
+            },
+            redirect: 'if_required'
+        });
+        
+        if (error) {
+            // Afficher l'erreur
+            const errorElement = document.getElementById('payment-errors');
+            if (errorElement) {
+                errorElement.textContent = error.message;
+            }
+            
+            // Réactiver le bouton
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Réessayer le paiement';
+            }
+        } else {
+            // Paiement réussi sans redirection
+            submitReservation(ownersData);
+        }
+    } catch (error) {
+        console.error('Erreur lors du paiement:', error);
+        alert(`Erreur lors du paiement: ${error.message}`);
         
         // Réactiver le bouton
         if (submitButton) {
             submitButton.disabled = false;
             submitButton.innerHTML = 'Réessayer le paiement';
         }
-    } else {
-        // Le paiement a réussi sans redirection
-        confirmReservation(paymentIntentId, ownersData);
     }
 }
 
