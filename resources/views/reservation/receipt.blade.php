@@ -26,6 +26,8 @@
                             @if($reservation->association)
                                 <p><strong>Association:</strong> {{ $reservation->association->name }}</p>
                             @endif
+                            <p><strong>Statut:</strong> <span class="badge bg-success">Payé</span></p>
+                            <p><strong>Référence de paiement:</strong> {{ $reservation->payment_intent_id }}</p>
                         </div>
                     </div>
                     

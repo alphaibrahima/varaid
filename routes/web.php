@@ -35,4 +35,28 @@ Route::get('/', function () {
 Route::get('/dashboard', [ReservationController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 Route::get('/get-slots/{date}', [ReservationController::class, 'getSlots'])->name('get.slots');
 
+
+Route::middleware(['auth', 'web'])->group(function () {
+    // Routes existantes...
+    Route::post('/create-payment-intent', [App\Http\Controllers\PaymentController::class, 'createPaymentIntent'])
+        ->name('payment.create-intent');
+});
+
+Route::get('/payment-success', [App\Http\Controllers\PaymentController::class, 'handleSuccess'])
+    ->name('payment.success')
+    ->middleware('auth');
+
+// Dans routes/web.php
+Route::get('/test-stripe-config', function () {
+    $stripeKey = config('services.stripe.key');
+    $stripeSecret = config('services.stripe.secret');
+    
+    return [
+        'key_exists' => !empty($stripeKey),
+        'key_prefix' => substr($stripeKey, 0, 7), // Affiche juste le début pour la sécurité
+        'secret_exists' => !empty($stripeSecret),
+        'secret_prefix' => substr($stripeSecret, 0, 7),
+    ];
+});
+
 require __DIR__.'/auth.php';

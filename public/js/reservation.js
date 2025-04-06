@@ -250,46 +250,178 @@ function generateOwnerFields() {
 }
 
 // Variables Stripe
+// let stripe;
+// let card;
+
+// // Initialisation de Stripe
+// function initStripe() {
+//     // Remplacez 'pk_test_votreClePubliqueStripe' par votre clé publique Stripe
+//     stripe = Stripe('pk_test_votreClePubliqueStripe');
+//     const elements = stripe.elements();
+    
+//     // Style pour l'élément de carte
+//     const style = {
+//         base: {
+//             color: '#32325d',
+//             fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+//             fontSmoothing: 'antialiased',
+//             fontSize: '16px',
+//             '::placeholder': {
+//                 color: '#aab7c4'
+//             }
+//         },
+//         invalid: {
+//             color: '#fa755a',
+//             iconColor: '#fa755a'
+//         }
+//     };
+    
+//     // Si un élément de carte existe déjà, on ne le recrée pas
+//     if (!card) {
+//         // Création de l'élément de carte
+//         card = elements.create('card', {
+//             style: style,
+//             hidePostalCode: true  // On cache le code postal pour simplifier
+//         });
+        
+//         // Montage de l'élément de carte dans le DOM
+//         card.mount('#card-element');
+        
+//         // Gestion des erreurs de saisie carte
+//         card.addEventListener('change', function(event) {
+//             const displayError = document.getElementById('card-errors');
+//             if (event.error) {
+//                 displayError.textContent = event.error.message;
+//             } else {
+//                 displayError.textContent = '';
+//             }
+//         });
+        
+//         // Gestion du bouton de paiement
+//         document.getElementById('submit-payment').addEventListener('click', processPayment);
+//     }
+// }
+
+// // Fonction pour traiter le paiement
+// function processPayment(event) {
+//     if (event) event.preventDefault();
+    
+//     const submitButton = document.getElementById('submit-payment');
+//     const cardholderName = document.getElementById('cardholder-name').value;
+//     const cardholderEmail = document.getElementById('cardholder-email').value;
+    
+//     // Validation de base
+//     if (!cardholderName || !cardholderEmail) {
+//         alert('Veuillez remplir tous les champs de paiement');
+//         return;
+//     }
+    
+//     // Valider les champs des propriétaires
+//     const ownerInputs = document.querySelectorAll('.owner-input');
+//     let allOwnersValid = true;
+//     let ownersData = [];
+    
+//     // Regrouper les données des propriétaires
+//     const quantity = parseInt(document.getElementById('quantity').value) || 1;
+//     for (let i = 1; i <= quantity; i++) {
+//         const firstname = document.getElementById(`owner-firstname-${i}`).value;
+//         const lastname = document.getElementById(`owner-lastname-${i}`).value;
+        
+//         if (!firstname || !lastname) {
+//             allOwnersValid = false;
+//             break;
+//         }
+        
+//         ownersData.push({
+//             firstname: firstname,
+//             lastname: lastname
+//         });
+//     }
+    
+//     if (!allOwnersValid) {
+//         alert('Veuillez remplir les noms et prénoms pour tous les propriétaires');
+//         return;
+//     }
+    
+//     // Désactiver le bouton pendant le traitement
+//     submitButton.disabled = true;
+//     submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Traitement en cours...';
+    
+//     // Récupérer les données pour la requête
+//     const slotId = localStorage.getItem('selectedSlotId');
+    
+//     if (!slotId) {
+//         alert('Veuillez sélectionner un créneau horaire');
+//         goToStep(2);
+//         return;
+//     }
+
+//     const data = {
+//         reservationNumber: 'R-' + Math.floor(100000 + Math.random() * 900000),
+//         cardholderName: cardholderName,
+//         cardholderEmail: cardholderEmail,
+//         slotId: parseInt(slotId),
+//         quantity: quantity,
+//         owners: ownersData
+//     };
+    
+//     // Dans un environnement de production, vous devriez faire un appel à votre serveur
+//     // pour créer un PaymentIntent et récupérer le client_secret
+    
+//     // Simuler un appel réussi (pour test)
+//     setTimeout(function() {
+//         // Réactiver le bouton
+//         submitButton.disabled = false;
+//         submitButton.innerHTML = 'Confirmer et payer l\'acompte';
+        
+//         // Pour l'exemple, nous allons directement confirmer la réservation
+//         confirmReservation(data);
+//     }, 2000);
+// }
+
+// Variables Stripe
 let stripe;
-let card;
+let elements;
+let paymentElement;
+let paymentIntentId;
 
 // Initialisation de Stripe
 function initStripe() {
-    // Remplacez 'pk_test_votreClePubliqueStripe' par votre clé publique Stripe
-    stripe = Stripe('pk_test_votreClePubliqueStripe');
-    const elements = stripe.elements();
+    stripe = Stripe('pk_test_51JUagXA0Pqxe87f5oHIjCKz43aDvkqkxbxmI7i8pLnr4ynfnvo9Caf9qARxP5SZ8MhOwyABy1KOowNuZAI6NpIN5006xdGeAd9');
     
-    // Style pour l'élément de carte
-    const style = {
-        base: {
-            color: '#32325d',
-            fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
-            fontSmoothing: 'antialiased',
-            fontSize: '16px',
-            '::placeholder': {
-                color: '#aab7c4'
-            }
-        },
-        invalid: {
-            color: '#fa755a',
-            iconColor: '#fa755a'
-        }
-    };
+    // Récupérer les données nécessaires pour créer une intention de paiement
+    const slotId = localStorage.getItem('selectedSlotId');
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
     
-    // Si un élément de carte existe déjà, on ne le recrée pas
-    if (!card) {
-        // Création de l'élément de carte
-        card = elements.create('card', {
-            style: style,
-            hidePostalCode: true  // On cache le code postal pour simplifier
+    // Désactiver le bouton pendant le chargement
+    const submitButton = document.getElementById('submit-payment');
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Chargement...';
+    }
+    
+    // Créer une intention de paiement côté serveur
+    createPaymentIntent(slotId, quantity).then(({clientSecret, paymentIntentId: intentId}) => {
+        paymentIntentId = intentId;
+        
+        // Créer les éléments Stripe avec le client secret reçu
+        elements = stripe.elements({
+            clientSecret: clientSecret,
+            appearance: {
+                theme: 'stripe',
+                variables: {
+                    colorPrimary: '#0066cc',
+                }
+            },
         });
+
+        // Créer et monter l'élément de paiement
+        paymentElement = elements.create('payment');
+        paymentElement.mount('#payment-element');
         
-        // Montage de l'élément de carte dans le DOM
-        card.mount('#card-element');
-        
-        // Gestion des erreurs de saisie carte
-        card.addEventListener('change', function(event) {
-            const displayError = document.getElementById('card-errors');
+        // Écouter les événements de changement
+        paymentElement.on('change', (event) => {
+            const displayError = document.getElementById('payment-errors');
             if (event.error) {
                 displayError.textContent = event.error.message;
             } else {
@@ -297,41 +429,121 @@ function initStripe() {
             }
         });
         
-        // Gestion du bouton de paiement
-        document.getElementById('submit-payment').addEventListener('click', processPayment);
+        // Réactiver le bouton
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.innerHTML = `Confirmer et payer l'acompte de ${quantity * 100},00 €`;
+        }
+        
+        // Ajouter un gestionnaire d'événements pour la soumission du formulaire
+        const form = document.getElementById('payment-form');
+        if (form) {
+            form.addEventListener('submit', handlePaymentSubmission);
+        }
+    }).catch(error => {
+        console.error('Error initializing Stripe:', error);
+        alert('Une erreur est survenue lors de l\'initialisation du paiement. Veuillez réessayer.');
+        
+        // Réactiver le bouton en cas d'erreur
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Réessayer';
+        }
+    });
+
+    // Dans initStripe()
+    debugStripe('Initialisation de Stripe avec la clé publique', 'pk_test_...');
+    // Après avoir reçu le clientSecret
+    debugStripe('ClientSecret obtenu', { id: paymentIntentId, hasSecret: !!clientSecret });
+}
+
+// Fonction pour créer une intention de paiement côté serveur
+async function createPaymentIntent(slotId, quantity) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    try {
+        console.log('Envoi de la requête create-payment-intent avec slotId:', slotId, 'et quantity:', quantity);
+        
+        const response = await fetch('/create-payment-intent', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                slotId: slotId,
+                quantity: quantity
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Erreur API:', errorData);
+            throw new Error(errorData.error || 'Erreur lors de la création de l\'intention de paiement');
+        }
+        
+        const data = await response.json();
+        console.log('Réponse create-payment-intent:', data);
+        return data;
+    } catch (error) {
+        console.error('Erreur complète:', error);
+        throw error;
     }
 }
 
-// Fonction pour traiter le paiement
-// Fonction pour traiter le paiement
-function processPayment(event) {
-    if (event) event.preventDefault();
+// Gérer la soumission du formulaire de paiement
+async function handlePaymentSubmission(e) {
+    e.preventDefault();
     
-    const submitButton = document.getElementById('submit-payment');
-    const cardholderName = document.getElementById('cardholder-name').value;
-    const cardholderEmail = document.getElementById('cardholder-email').value;
-    
-    // Validation de base
-    if (!cardholderName || !cardholderEmail) {
-        alert('Veuillez remplir tous les champs de paiement');
+    // Valider les champs des propriétaires
+    if (!validateOwnerFields()) {
+        alert('Veuillez remplir les noms et prénoms pour tous les propriétaires');
         return;
     }
     
-    // Valider les champs des propriétaires
-    const ownerInputs = document.querySelectorAll('.owner-input');
-    let allOwnersValid = true;
+    const submitButton = document.getElementById('submit-payment');
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Traitement en cours...';
+    }
+    
+    // Collecter les données des propriétaires
+    const ownersData = collectOwnersData();
+    
+    // Confirmer le paiement
+    const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+            return_url: `${window.location.origin}/payment-success?owners=${encodeURIComponent(JSON.stringify(ownersData))}`,
+        },
+        redirect: 'if_required',
+    });
+    
+    if (error) {
+        // Afficher le message d'erreur à l'utilisateur
+        const errorElement = document.getElementById('payment-errors');
+        errorElement.textContent = error.message;
+        
+        // Réactiver le bouton
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Réessayer le paiement';
+        }
+    } else {
+        // Le paiement a réussi sans redirection
+        confirmReservation(paymentIntentId, ownersData);
+    }
+}
+
+// Collecter les données des propriétaires
+function collectOwnersData() {
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
     let ownersData = [];
     
-    // Regrouper les données des propriétaires
-    const quantity = parseInt(document.getElementById('quantity').value) || 1;
     for (let i = 1; i <= quantity; i++) {
         const firstname = document.getElementById(`owner-firstname-${i}`).value;
         const lastname = document.getElementById(`owner-lastname-${i}`).value;
-        
-        if (!firstname || !lastname) {
-            allOwnersValid = false;
-            break;
-        }
         
         ownersData.push({
             firstname: firstname,
@@ -339,58 +551,31 @@ function processPayment(event) {
         });
     }
     
-    if (!allOwnersValid) {
-        alert('Veuillez remplir les noms et prénoms pour tous les propriétaires');
-        return;
-    }
-    
-    // Désactiver le bouton pendant le traitement
-    submitButton.disabled = true;
-    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Traitement en cours...';
-    
-    // Récupérer les données pour la requête
-    const slotId = localStorage.getItem('selectedSlotId');
-    
-    if (!slotId) {
-        alert('Veuillez sélectionner un créneau horaire');
-        goToStep(2);
-        return;
-    }
-
-    const data = {
-        reservationNumber: 'R-' + Math.floor(100000 + Math.random() * 900000),
-        cardholderName: cardholderName,
-        cardholderEmail: cardholderEmail,
-        slotId: parseInt(slotId),
-        quantity: quantity,
-        owners: ownersData
-    };
-    
-    // Dans un environnement de production, vous devriez faire un appel à votre serveur
-    // pour créer un PaymentIntent et récupérer le client_secret
-    
-    // Simuler un appel réussi (pour test)
-    setTimeout(function() {
-        // Réactiver le bouton
-        submitButton.disabled = false;
-        submitButton.innerHTML = 'Confirmer et payer l\'acompte';
-        
-        // Pour l'exemple, nous allons directement confirmer la réservation
-        confirmReservation(data);
-    }, 2000);
+    return ownersData;
 }
 
-
-// Modifier la fonction confirmReservation pour inclure les données des propriétaires
-function confirmReservation(paymentData) {
+// Confirmer la réservation
+function confirmReservation(paymentIntentId, ownersData) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const slotId = localStorage.getItem('selectedSlotId');
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
     
     if (!csrfToken) {
         console.error('CSRF token missing');
         alert('Erreur: Token CSRF manquant');
         return;
     }
-
+    
+    const data = {
+        reservationNumber: 'R-' + Math.floor(100000 + Math.random() * 900000),
+        cardholderName: document.getElementById('cardholder-name').value,
+        cardholderEmail: document.getElementById('cardholder-email').value,
+        slotId: parseInt(slotId),
+        quantity: quantity,
+        paymentIntentId: paymentIntentId,
+        owners: ownersData
+    };
+    
     fetch('/reservation/confirm', {
         method: 'POST',
         headers: {
@@ -400,7 +585,7 @@ function confirmReservation(paymentData) {
             'X-Requested-With': 'XMLHttpRequest'
         },
         credentials: 'same-origin',
-        body: JSON.stringify(paymentData)
+        body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data => {
@@ -409,9 +594,6 @@ function confirmReservation(paymentData) {
             // Clear localStorage
             localStorage.removeItem('selectedSlotId');
             localStorage.removeItem('selectedTime');
-            
-            // Show success message
-            alert('Réservation confirmée avec succès!');
             
             // Redirect to receipt page using the URL from response
             if (data.redirectUrl) {
@@ -426,8 +608,64 @@ function confirmReservation(paymentData) {
     .catch(error => {
         console.error('Error:', error);
         alert('Erreur lors de la confirmation: ' + error.message);
+        
+        // Réactiver le bouton
+        const submitButton = document.getElementById('submit-payment');
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Réessayer';
+        }
     });
 }
+
+
+// Modifier la fonction confirmReservation pour inclure les données des propriétaires
+// function confirmReservation(paymentData) {
+//     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+//     if (!csrfToken) {
+//         console.error('CSRF token missing');
+//         alert('Erreur: Token CSRF manquant');
+//         return;
+//     }
+
+//     fetch('/reservation/confirm', {
+//         method: 'POST',
+//         headers: {
+//             'Content-Type': 'application/json',
+//             'X-CSRF-TOKEN': csrfToken,
+//             'Accept': 'application/json',
+//             'X-Requested-With': 'XMLHttpRequest'
+//         },
+//         credentials: 'same-origin',
+//         body: JSON.stringify(paymentData)
+//     })
+//     .then(response => response.json())
+//     .then(data => {
+//         console.log('Response:', data);
+//         if (data.status === 'success') {
+//             // Clear localStorage
+//             localStorage.removeItem('selectedSlotId');
+//             localStorage.removeItem('selectedTime');
+            
+//             // Show success message
+//             alert('Réservation confirmée avec succès!');
+            
+//             // Redirect to receipt page using the URL from response
+//             if (data.redirectUrl) {
+//                 window.location.href = data.redirectUrl;
+//             } else {
+//                 console.error('No redirect URL provided');
+//             }
+//         } else {
+//             throw new Error(data.message || 'Une erreur est survenue');
+//         }
+//     })
+//     .catch(error => {
+//         console.error('Error:', error);
+//         alert('Erreur lors de la confirmation: ' + error.message);
+//     });
+// }
 
 
 // Fonction pour mettre à jour le bouton de paiement

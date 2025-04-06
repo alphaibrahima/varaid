@@ -70,6 +70,7 @@ class ReservationController extends Controller
                 'cardholderEmail' => 'required|email',
                 'slotId' => 'required|integer|exists:slots,id',
                 'quantity' => 'required|integer|min:1|max:5',
+                'paymentIntentId' => 'required|string',
                 'owners' => 'required|array|min:1',
                 'owners.*.firstname' => 'required|string',
                 'owners.*.lastname' => 'required|string'
@@ -82,9 +83,10 @@ class ReservationController extends Controller
                 'size' => 'grand',
                 'quantity' => $validated['quantity'],
                 'code' => $validated['reservationNumber'],
-                'status' => 'pending',
+                'status' => 'confirmed',
                 'date' => now(),
-                'owners_data' => json_encode($validated['owners']), // Stockage des informations propriétaires
+                'owners_data' => json_encode($validated['owners']),
+                'payment_intent_id' => $validated['paymentIntentId']
             ]);
     
             // Return success response with redirect URL
