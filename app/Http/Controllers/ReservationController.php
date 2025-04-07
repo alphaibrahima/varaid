@@ -79,7 +79,7 @@ class ReservationController extends Controller
             $reservation = Reservation::create([
                 'user_id' => $user->id,
                 'slot_id' => $validated['slotId'],
-                'association_id' => $user->association ? $user->association->id : null,
+                'association_id' => $user->association_id ?? null,
                 'size' => 'grand',
                 'quantity' => $validated['quantity'],
                 'code' => $validated['reservationNumber'],
@@ -89,7 +89,25 @@ class ReservationController extends Controller
                 'payment_intent_id' => $validated['paymentIntentId']
             ]);
     
-            // Return success response with redirect URL
+            // Charger les relations nécessaires pour la notification
+            $reservation->load(['user', 'slot', 'association']);
+    
+            // Envoi de l'email de confirmation avec le reçu en PDF
+            try {
+                // Envoi de l'email de confirmation avec le reçu en PDF
+                $user->notify(new \App\Notifications\ReservationConfirmation($reservation));
+            
+                // Envoyer également un email à l'adresse fournie dans le formulaire si différente
+                if ($validated['cardholderEmail'] !== $user->email) {
+                    \Notification::route('mail', [
+                        $validated['cardholderEmail'] => $validated['cardholderName']
+                    ])->notify(new \App\Notifications\ReservationConfirmation($reservation));
+                }
+            } catch (\Exception $emailError) {
+                \Log::warning('Erreur lors de l\'envoi d\'email: ' . $emailError->getMessage());
+                // Ne pas bloquer la confirmation de réservation si l'email échoue
+            }
+    
             return response()->json([
                 'status' => 'success',
                 'message' => 'Réservation créée avec succès',
