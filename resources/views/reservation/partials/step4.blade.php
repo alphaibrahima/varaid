@@ -64,8 +64,9 @@
                         
                         <div class="alert alert-info mt-3">
                             <small>
-                                <i class="bi bi-info-circle"></i> En confirmant cette réservation, vous vous engagez à verser un acompte de 100€. 
-                                Le solde sera à régler le jour de la récupération. Une notification vous sera envoyée par email et SMS avec tous les détails.
+                                <i class="bi bi-info-circle"></i>
+                                Acompte obligatoire et non remboursable. 
+                                Solde à régler après avoir choisi votre (vos) agneau(x) sur le site.
                             </small>
                         </div>
                         

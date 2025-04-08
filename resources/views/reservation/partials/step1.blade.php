@@ -1,5 +1,5 @@
 <div class="step active" id="step-1">
-    <h3 class="mb-4">Étape 1: Choisissez un jour</h3>
+    <h3 class="mb-4">Étape 1: Sélectionnez le jour pour venir choisir votre agneau sur le site de Hyères</h3>
     <div class="row row-cols-1 row-cols-md-3 g-4">
         @foreach ($slotCounts as $item)
         @php
@@ -24,5 +24,15 @@
             </div>
         </div>
         @endforeach
+    </div>
+</div>
+
+{{-- Alert de confirmation --}}
+<div class="alert alert-info mt-4 text-center" style="background-color: #e6f2ff; border-color: #b3d9ff;">
+    <div class="d-flex justify-content-center align-items-center">
+        <i class="bi bi-info-circle me-2 text-primary" style="font-size: 1.5rem;"></i>
+        <small class="text-primary">
+            En confirmant votre choix, vous recevrez une notification par sms et par mail détaillant vos rendez-vous.
+        </small>
     </div>
 </div>

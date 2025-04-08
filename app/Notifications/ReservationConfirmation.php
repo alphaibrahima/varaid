@@ -38,23 +38,44 @@ class ReservationConfirmation extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        // Formater l'heure pour n'afficher que l'heure (sans date)
+        $formattedTime = date('H:i', strtotime($this->reservation->slot->start_time));
+        
+        $mailMessage = (new MailMessage)
             ->subject('Confirmation de votre réservation d\'agneau')
             ->greeting('Bonjour ' . $notifiable->name)
             ->line('Nous sommes heureux de vous confirmer votre réservation d\'agneau pour l\'Eid.')
             ->line('Numéro de réservation: ' . $this->reservation->code)
             ->line('Date: ' . $this->reservation->slot->date->format('d/m/Y'))
-            ->line('Heure: ' . $this->reservation->slot->start_time)
+            ->line('Heure: ' . $formattedTime)
             ->line('Quantité: ' . $this->reservation->quantity)
             ->line('Taille: ' . ucfirst($this->reservation->size))
             ->line('Acompte payé: ' . ($this->reservation->quantity * 100) . '€')
-            ->line('Le solde de ' . ($this->reservation->quantity * 100) . '€ sera à régler lors de la récupération.')
-            ->action('Voir votre réservation', url('/reservation/receipt/' . $this->reservation->code))
-            ->line('Merci de nous avoir fait confiance!')
-            ->attach($this->pdfPath, [
+            ->line('Le solde de ' . ($this->reservation->quantity * 100) . '€ sera à régler lors de la récupération.');
+
+        // Ajouter les informations des propriétaires
+        if (!empty($this->reservation->owners_data)) {
+            $owners = json_decode($this->reservation->owners_data);
+            
+            $mailMessage->line('Informations des propriétaires:');
+            
+            foreach ($owners as $index => $owner) {
+                $mailMessage->line('- Agneau #' . ($index + 1) . ': ' . $owner->firstname . ' ' . $owner->lastname);
+            }
+        }
+
+        $mailMessage->action('Voir votre réservation', url('/reservation/receipt/' . $this->reservation->code))
+            ->line('Merci de nous avoir fait confiance!');
+        
+        // Ajout de la pièce jointe PDF si elle existe
+        if (isset($this->pdfPath) && file_exists($this->pdfPath)) {
+            $mailMessage->attach($this->pdfPath, [
                 'as' => 'reservation-' . $this->reservation->code . '.pdf',
                 'mime' => 'application/pdf',
             ]);
+        }
+
+        return $mailMessage;
     }
 
     /**

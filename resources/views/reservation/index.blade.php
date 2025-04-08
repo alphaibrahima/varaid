@@ -49,7 +49,9 @@
 
     <div class="container py-5">
         <div class="page-container">
-            <h1 class="text-center mb-5">Réservation d'Agneau pour l'Eid</h1>
+            <h2 class="text-center mb-5">
+                Réservez votre agneau pour l’Aïd Al Adha 2025
+            </h2>
             
             <!-- Indicateur de progression -->
             <div class="step-indicator mb-5">

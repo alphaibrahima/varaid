@@ -1,4 +1,15 @@
 <div class="step" id="step-3">
+
+    <div class="alert alert-info mt-4 text-center" style="background-color: #e6f2ff; border-color: #b3d9ff;">
+        <div class="d-flex justify-content-center align-items-center">
+            <i class="bi bi-info-circle me-2 text-primary" style="font-size: 1.5rem;"></i>
+            <small class="text-primary">
+                Un acompte de 100€ par réservataire est obligatoire.
+                Acompte non remboursable.            
+            </small>
+        </div>
+    </div>
+
     <h3 class="mb-4">Étape 3: Configurez votre commande <small class="text-muted" id="selected-time"></small></h3>
     <div class="d-flex mb-3">
         <button class="btn btn-outline-secondary me-2" onclick="goToStep(2)">
