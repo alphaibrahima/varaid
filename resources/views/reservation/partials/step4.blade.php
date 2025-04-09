@@ -47,7 +47,7 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="cardholder-name" class="form-label">Nom sur la carte</label>
-                                <input type="text" class="form-control" id="cardholder-name" placeholder="Mouhamad" value="{{ $user->name }}" required>
+                                <input type="text" class="form-control" id="cardholder-name" placeholder="Mouhamad" value="{{ $user->firstname }} {{ $user->name }}" required>
                             </div>
                             <div class="col-md-6">
                                 <label for="cardholder-email" class="form-label">Email</label>

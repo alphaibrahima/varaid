@@ -97,10 +97,11 @@
         // Make CSRF token and user info globally available
         window.csrf_token = '{{ csrf_token() }}';
         window.userInfo = {
-            name: '{{ $user->name }}',
+            // name: '{{ $user->name }}',
+            // firstName: '{{ $user->firstname}}',
             // Si vous avez les champs séparés de prénom et nom dans votre base de données, utilisez-les
-            firstName: '{{ $user->first_name ?? explode(" ", $user->name)[0] }}',
-            lastName: '{{ $user->last_name ?? (count(explode(" ", $user->name)) > 1 ? explode(" ", $user->name)[1] : "") }}',
+            firstName: '{{ $user->firstname}}',
+            lastName: '{{ $user->name }}',
             email: '{{ $user->email }}'
         };
         window.stripeConfig = {

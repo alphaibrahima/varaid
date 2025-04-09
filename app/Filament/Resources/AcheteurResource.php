@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -34,6 +35,10 @@ class AcheteurResource extends Resource
                 Forms\Components\Section::make('Informations personnelles')
                     ->columns(2)
                     ->schema([
+                        TextInput::make('firstname')
+                            ->label('Prénom')
+                            ->required(),
+
                         TextInput::make('name')
                             ->label('Nom complet')
                             ->required(),
@@ -80,9 +85,14 @@ class AcheteurResource extends Resource
                                     ])
                             ]),
                             
-                        TextInput::make('address')
-                            ->label('Adresse')
-                            ->columnSpanFull(),
+                        // TextInput::make('address')
+                        //     ->label('Adresse')
+                        //     ->columnSpanFull(),
+
+                        Textarea::make('full_address')
+                            ->label('Adresse complète')
+                            ->required()
+                            ->rows(3),
                     ]),
 
                 Forms\Components\Section::make('Paramètres')
