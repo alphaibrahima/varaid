@@ -13,7 +13,19 @@ class AssociationDashboardController extends Controller
 {
     /**
      * Affiche le tableau de bord de l'association
-     */
+    */
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->role !== 'association') {
+                return redirect('/dashboard')->with('error', 'Accès non autorisé à cette section.');
+            }
+            return $next($request);
+        });
+    }
+
+    
     public function index()
     {
         $association = Auth::user();
