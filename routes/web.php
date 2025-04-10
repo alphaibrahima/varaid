@@ -46,8 +46,18 @@ Route::get('/payment-success', [App\Http\Controllers\PaymentController::class, '
     ->name('payment.success')
     ->middleware('auth');
 
-// Dans routes/web.php
-// Route temporaire pour tester les clés Stripe
+// Routes pour le dashboard des associations
+Route::middleware(['auth', 'role:association'])->prefix('association')->name('association.')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\AssociationDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/buyers', [App\Http\Controllers\AssociationDashboardController::class, 'buyers'])->name('buyers');
+    Route::get('/buyers/{id}', [App\Http\Controllers\AssociationDashboardController::class, 'buyerDetails'])->name('buyers.details');
+    Route::post('/buyers/{id}/toggle-status', [App\Http\Controllers\AssociationDashboardController::class, 'toggleBuyerStatus'])->name('buyers.toggle-status');
+    Route::get('/reservations', [App\Http\Controllers\AssociationDashboardController::class, 'reservations'])->name('reservations');
+    Route::get('/quotas', [App\Http\Controllers\AssociationDashboardController::class, 'quotas'])->name('quotas');
+});
+
+
+    // Route temporaire pour tester les clés Stripe
 Route::get('/test-stripe-keys', function() {
     return [
         'public_key' => config('services.stripe.key'),

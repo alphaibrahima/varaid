@@ -29,6 +29,16 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Rediriger l'utilisateur en fonction de son rôle
+        $user = $request->user();
+        
+        if ($user->role === 'association') {
+            return redirect()->route('association.dashboard');
+        } elseif ($user->role === 'admin') {
+            return redirect('/admin'); // Ou vers la route admin appropriée
+        }
+
+        // Par défaut, rediriger vers le dashboard acheteur
         return redirect()->intended(RouteServiceProvider::HOME);
     }
 
