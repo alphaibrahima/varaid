@@ -19,6 +19,9 @@ use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\Action;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 
 class AcheteurResource extends Resource
 {
@@ -85,10 +88,6 @@ class AcheteurResource extends Resource
                                     ])
                             ]),
                             
-                        // TextInput::make('address')
-                        //     ->label('Adresse')
-                        //     ->columnSpanFull(),
-
                         Textarea::make('full_address')
                             ->label('Adresse complète')
                             ->required()
@@ -122,7 +121,29 @@ class AcheteurResource extends Resource
                             ->password()
                             ->dehydrated(false)
                             ->visible(fn ($operation) => $operation === 'create'),
+                    ]),
+                    
+                Forms\Components\Section::make('Affiliation')
+                    ->schema([
+                        Forms\Components\TextInput::make('affiliation_code')
+                            ->label('Code d\'affiliation')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->visible(fn ($operation) => $operation === 'edit'),
+                            
+                        Forms\Components\Toggle::make('affiliation_verified')
+                            ->label('Affiliation vérifiée')
+                            ->onColor('success')
+                            ->offColor('danger')
+                            ->visible(fn ($operation) => $operation === 'edit'),
+                            
+                        Forms\Components\DateTimePicker::make('affiliation_verified_at')
+                            ->label('Date de vérification')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->visible(fn ($livewire) => $livewire->record && $livewire->record->hasVerifiedAffiliation()),
                     ])
+                    ->visible(fn ($operation) => $operation === 'edit'),
             ]);
     }
 
@@ -155,6 +176,21 @@ class AcheteurResource extends Resource
                 TextColumn::make('created_at')
                     ->label('Créé le')
                     ->dateTime('d/m/Y'),
+
+                TextColumn::make('affiliation_verified')
+                    ->label('Affiliation vérifiée')
+                    ->badge()
+                    ->state(function (User $record): string {
+                        return $record->affiliation_verified ? 'Vérifiée' : 'Non vérifiée';
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'Vérifiée' => 'success',
+                        'Non vérifiée' => 'danger',
+                    }),
+                    
+                TextColumn::make('affiliation_code')
+                    ->label('Code d\'affiliation')
+                    ->searchable(),
             ])
             ->filters([
                 SelectFilter::make('association')
@@ -165,6 +201,46 @@ class AcheteurResource extends Resource
             ->actions([
                 EditAction::make(),
                 DeleteAction::make(),
+
+                Action::make('regenerateCode')
+                    ->label('Régénérer code')
+                    ->icon('heroicon-o-key')
+                    ->color('warning')
+                    ->visible(fn (User $record) => Auth::user()->can('viewAffiliationCode', $record))
+                    ->requiresConfirmation()
+                    ->form([
+                        Forms\Components\Checkbox::make('send_notification')
+                            ->label('Envoyer une notification')
+                            ->default(true),
+                    ])
+                    ->action(function (User $record, array $data) {
+                        $code = $record->generateAffiliationCode();
+                        
+                        if ($data['send_notification']) {
+                            $record->notify(new \App\Notifications\AffiliationCodeNotification());
+                        }
+                        
+                        Notification::make()
+                            ->title('Code régénéré')
+                            ->body("Nouveau code: {$code}")
+                            ->success()
+                            ->send();
+                    }),
+                
+                Action::make('verifyAffiliation')
+                    ->label('Vérifier affiliation')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->visible(fn (User $record) => !$record->hasVerifiedAffiliation() && Auth::user()->can('verifyAffiliation', $record))
+                    ->requiresConfirmation()
+                    ->action(function (User $record) {
+                        $record->markAffiliationAsVerified();
+                        
+                        Notification::make()
+                            ->title('Affiliation vérifiée')
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->modifyQueryUsing(fn (Builder $query) => $query->where('role', 'buyer'));
     }

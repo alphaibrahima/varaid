@@ -21,6 +21,26 @@
     </div>
 @endif
 
+
+    <!-- Ajouter cet indicateur pour les acheteurs -->
+    @if(Auth::user()->role === 'buyer')
+        @if(Auth::user()->hasVerifiedAffiliation())
+            <span class="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                <svg class="mr-1 h-2 w-2 text-green-500" fill="currentColor" viewBox="0 0 8 8">
+                    <circle cx="4" cy="4" r="3" />
+                </svg>
+                Affiliation vérifiée
+            </span>
+        @else
+            <span class="inline-flex items-center px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
+                <svg class="mr-1 h-2 w-2 text-red-500" fill="currentColor" viewBox="0 0 8 8">
+                    <circle cx="4" cy="4" r="3" />
+                </svg>
+                Affiliation non vérifiée
+            </span>
+        @endif
+    @endif
+
 <!-- Ajouter également à la section "Responsive Navigation Menu" -->
 
 <!-- Responsive Association Dashboard Links (visible only for 'association' role) -->

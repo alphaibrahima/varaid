@@ -1,5 +1,12 @@
 document.addEventListener("DOMContentLoaded", function() {
     console.log(document.getElementById('confirmation-day'));
+    
+    // Initialiser les alertes en fonction de l'étape active
+    const currentStep = document.querySelector('.step.active');
+    if (currentStep) {
+        const stepNumber = currentStep.id.split('-')[1];
+        showAlertForStep(stepNumber);
+    }
 });
 
 window.onload = function() {
@@ -12,10 +19,35 @@ let selectedTime = '';
 let selectedSize = 'grand';
 let selectedQuantity = 1;
 
+// Fonction pour afficher l'alerte pour l'étape courante
+function showAlertForStep(step) {
+    // Masquer toutes les alertes d'étape
+    document.querySelectorAll('.step-alert').forEach(alert => {
+        alert.style.display = 'none';
+    });
+    
+    // Afficher l'alerte correspondant à l'étape
+    const alertElement = document.getElementById(`alert-step-${step}`);
+    if (alertElement) {
+        alertElement.style.display = 'block';
+    }
+}
+
 // Fonction pour changer d'étape
 function goToStep(step) {
+    // Vérifier si l'affiliation est confirmée avant de changer d'étape
+    if (typeof affiliationVerified !== 'undefined' && !affiliationVerified) {
+        // Afficher la modal d'affiliation
+        const affiliationModal = new bootstrap.Modal(document.getElementById('affiliationModal'));
+        affiliationModal.show();
+        return;
+    }
+    
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
     document.getElementById(`step-${step}`).classList.add('active');
+    
+    // Afficher l'alerte correspondante à l'étape
+    showAlertForStep(step);
     
     // Mettre à jour l'indicateur de progression
     const progress = ((step - 1) / 3) * 100;
@@ -43,6 +75,14 @@ function goToStep(step) {
 
 // Sélection du jour
 function selectDay(day) {
+    // Vérifier si l'affiliation est confirmée
+    if (typeof affiliationVerified !== 'undefined' && !affiliationVerified) {
+        // Afficher la modal d'affiliation
+        const affiliationModal = new bootstrap.Modal(document.getElementById('affiliationModal'));
+        affiliationModal.show();
+        return;
+    }
+    
     selectedDay = day;
     const formattedDate = new Date(day).toLocaleDateString('fr-FR', {
         weekday: 'long', 
@@ -109,6 +149,14 @@ function selectDay(day) {
 
 // Sélection de l'heure
 function selectTimeSlot(slotId, time) {
+    // Vérifier si l'affiliation est confirmée
+    if (typeof affiliationVerified !== 'undefined' && !affiliationVerified) {
+        // Afficher la modal d'affiliation
+        const affiliationModal = new bootstrap.Modal(document.getElementById('affiliationModal'));
+        affiliationModal.show();
+        return;
+    }
+    
     // Stocker le slot_id dans localStorage
     localStorage.setItem('selectedSlotId', slotId);
     localStorage.setItem('selectedTime', time);
@@ -204,47 +252,107 @@ function generateOwnerFields() {
             const ownerSection = document.createElement('div');
             ownerSection.className = 'card mb-3';
             
+            // Générer un ID unique pour le collapsible
+            const collapseId = `owner-collapse-${i}`;
+            
             // Déterminer si c'est le premier agneau (celui du propriétaire principal)
             const isFirstOwner = (i === 1);
             const headerText = isFirstOwner ? 'Agneau #1 (Vous-même)' : `Agneau #${i}`;
             
+            // Le premier propriétaire est ouvert par défaut, les autres sont fermés
+            const showClass = isFirstOwner ? 'show' : '';
+            
             // Préparer les valeurs par défaut pour le premier propriétaire
             let firstNameValue = '';
             let lastNameValue = '';
+            let emailValue = '';
+            let phoneValue = '';
+            let addressValue = '';
             let readOnlyAttr = '';
             
             if (isFirstOwner && window.userInfo) {
                 firstNameValue = window.userInfo.firstName || '';
                 lastNameValue = window.userInfo.lastName || '';
+                emailValue = window.userInfo.email || '';
+                phoneValue = window.userInfo.phone || '';
+                addressValue = window.userInfo.full_address || '';
                 // Option: rendre les champs en lecture seule pour le premier propriétaire
                 // readOnlyAttr = 'readonly';
             }
             
             ownerSection.innerHTML = `
-                <div class="card-header bg-light">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">${headerText}</h6>
+                    <button class="btn btn-link btn-sm p-0" 
+                            type="button" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#${collapseId}" 
+                            aria-expanded="${isFirstOwner ? 'true' : 'false'}" 
+                            aria-controls="${collapseId}">
+                        <i class="bi ${isFirstOwner ? 'bi-chevron-up' : 'bi-chevron-down'}"></i>
+                    </button>
                 </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="owner-firstname-${i}" class="form-label">Prénom</label>
-                            <input type="text" class="form-control owner-input" id="owner-firstname-${i}" 
-                                name="owners[${i}][firstname]" value="${firstNameValue}" ${readOnlyAttr} required>
+                <div id="${collapseId}" class="collapse ${showClass}">
+                    <div class="card-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="owner-firstname-${i}" class="form-label">Prénom</label>
+                                <input type="text" class="form-control owner-input" id="owner-firstname-${i}" 
+                                    name="owners[${i}][firstname]" value="${firstNameValue}" ${readOnlyAttr} required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="owner-lastname-${i}" class="form-label">Nom</label>
+                                <input type="text" class="form-control owner-input" id="owner-lastname-${i}" 
+                                    name="owners[${i}][lastname]" value="${lastNameValue}" ${readOnlyAttr} required>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <label for="owner-lastname-${i}" class="form-label">Nom</label>
-                            <input type="text" class="form-control owner-input" id="owner-lastname-${i}" 
-                                name="owners[${i}][lastname]" value="${lastNameValue}" ${readOnlyAttr} required>
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="owner-email-${i}" class="form-label">Email</label>
+                                <input type="email" class="form-control owner-input" id="owner-email-${i}" 
+                                    name="owners[${i}][email]" value="${emailValue}" ${readOnlyAttr} required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="owner-phone-${i}" class="form-label">Téléphone</label>
+                                <input type="tel" class="form-control owner-input" id="owner-phone-${i}" 
+                                    name="owners[${i}][phone]" value="${phoneValue}" ${readOnlyAttr} required>
+                            </div>
                         </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="owner-address-${i}" class="form-label">Adresse</label>
+                                <textarea class="form-control owner-input" id="owner-address-${i}" 
+                                    name="owners[${i}][address]" rows="2" ${readOnlyAttr} required>${addressValue}</textarea>
+                            </div>
+                        </div>
+                        
+                        ${isFirstOwner ? `
+                        <div class="form-text text-muted mt-3">
+                            <i class="bi bi-info-circle"></i> Ces informations sont pré-remplies avec votre profil.
+                        </div>
+                        ` : ''}
                     </div>
-                    ${isFirstOwner ? `
-                    <div class="form-text text-muted mt-2">
-                        <i class="bi bi-info-circle"></i> Ces informations sont pré-remplies avec votre profil.
-                    </div>
-                    ` : ''}
                 </div>
             `;
+            
             container.appendChild(ownerSection);
+            
+            // Ajouter un gestionnaire d'événements pour changer l'icône lors de l'ouverture/fermeture
+            const collapseElement = ownerSection.querySelector(`#${collapseId}`);
+            const toggleButton = ownerSection.querySelector(`[data-bs-target="#${collapseId}"]`);
+            const toggleIcon = toggleButton.querySelector('i');
+            
+            collapseElement.addEventListener('show.bs.collapse', function () {
+                toggleIcon.classList.remove('bi-chevron-down');
+                toggleIcon.classList.add('bi-chevron-up');
+            });
+            
+            collapseElement.addEventListener('hide.bs.collapse', function () {
+                toggleIcon.classList.remove('bi-chevron-up');
+                toggleIcon.classList.add('bi-chevron-down');
+            });
         }
     }
 }
@@ -258,6 +366,14 @@ let paymentElement;
 async function initStripe() {
     try {
         console.log('Initialisation de Stripe');
+        
+        // Vérifier si l'affiliation est confirmée
+        if (typeof affiliationVerified !== 'undefined' && !affiliationVerified) {
+            // Afficher la modal d'affiliation
+            const affiliationModal = new bootstrap.Modal(document.getElementById('affiliationModal'));
+            affiliationModal.show();
+            return;
+        }
         
         const slotId = localStorage.getItem('selectedSlotId');
         const quantity = parseInt(document.getElementById('quantity').value) || 1;
@@ -358,10 +474,22 @@ function validateOwnerFields() {
     let allValid = true;
     
     ownerInputs.forEach(input => {
+        // Vérification générale pour les champs vides
         if (!input.value.trim()) {
             input.classList.add('is-invalid');
             allValid = false;
-        } else {
+        } 
+        // Validation spécifique pour les emails
+        else if (input.type === 'email' && !validateEmail(input.value.trim())) {
+            input.classList.add('is-invalid');
+            allValid = false;
+        }
+        // Validation spécifique pour les téléphones
+        else if (input.type === 'tel' && !validatePhone(input.value.trim())) {
+            input.classList.add('is-invalid');
+            allValid = false;
+        }
+        else {
             input.classList.remove('is-invalid');
         }
     });
@@ -369,9 +497,31 @@ function validateOwnerFields() {
     return allValid;
 }
 
+// Fonction de validation d'email
+function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+// Fonction de validation de téléphone
+function validatePhone(phone) {
+    // Accepte un format international avec ou sans +
+    // Exemple: +33612345678 ou 33612345678 ou 0612345678
+    const re = /^(?:\+?\d{1,3})?[- ]?\d{9,10}$/;
+    return re.test(phone.replace(/\s/g, ''));
+}
+
 // Traitement du paiement
 async function handlePaymentSubmission(e) {
     e.preventDefault();
+    
+    // Vérifier si l'affiliation est confirmée
+    if (typeof affiliationVerified !== 'undefined' && !affiliationVerified) {
+        // Afficher la modal d'affiliation
+        const affiliationModal = new bootstrap.Modal(document.getElementById('affiliationModal'));
+        affiliationModal.show();
+        return;
+    }
     
     // Valider les champs propriétaires
     if (!validateOwnerFields()) {
@@ -436,10 +586,16 @@ function collectOwnersData() {
     for (let i = 1; i <= quantity; i++) {
         const firstname = document.getElementById(`owner-firstname-${i}`).value;
         const lastname = document.getElementById(`owner-lastname-${i}`).value;
+        const email = document.getElementById(`owner-email-${i}`).value;
+        const phone = document.getElementById(`owner-phone-${i}`).value;
+        const address = document.getElementById(`owner-address-${i}`).value;
         
         ownersData.push({
             firstname: firstname,
-            lastname: lastname
+            lastname: lastname,
+            email: email,
+            phone: phone,
+            address: address
         });
     }
     
@@ -566,3 +722,121 @@ function updateRecap() {
     // Mettre à jour l'acompte
     updateDeposit();
 }
+
+// Gestion de la modal de vérification d'affiliation
+document.addEventListener('DOMContentLoaded', function() {
+    // Variables globales pour l'affiliation
+    const affiliationAlert = document.getElementById('affiliation-alert');
+    const resendCodeBtn = document.getElementById('resend-code-btn');
+    
+    // Afficher automatiquement la modal si l'affiliation n'est pas vérifiée
+    if (typeof affiliationVerified !== 'undefined' && !affiliationVerified) {
+        const affiliationModal = new bootstrap.Modal(document.getElementById('affiliationModal'));
+        affiliationModal.show();
+    }
+    
+    // Écouter la soumission du formulaire d'affiliation
+    const affiliationForm = document.getElementById('affiliation-form');
+    if (affiliationForm) {
+        affiliationForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const code = document.getElementById('affiliation_code').value;
+            const verifyBtn = document.getElementById('verify-code-btn');
+            
+            // Désactiver le bouton pendant la vérification
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Vérification...';
+            
+            // Envoyer la requête AJAX
+            fetch('/verify-affiliation-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ affiliation_code: code })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Afficher un message de succès
+                    if (affiliationAlert) {
+                        affiliationAlert.classList.remove('d-none', 'alert-danger');
+                        affiliationAlert.classList.add('alert-success');
+                        affiliationAlert.textContent = data.message;
+                    }
+                    
+                    // Mettre à jour la variable d'état de l'affiliation
+                    window.affiliationVerified = true;
+                    
+                    // Fermer la modal après 2 secondes
+                    setTimeout(() => {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('affiliationModal'));
+                        if (modal) modal.hide();
+                        // Rafraîchir la page pour mettre à jour l'interface
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                // Afficher un message d'erreur
+                if (affiliationAlert) {
+                    affiliationAlert.classList.remove('d-none', 'alert-success');
+                    affiliationAlert.classList.add('alert-danger');
+                    affiliationAlert.textContent = error.message || 'Une erreur est survenue. Veuillez réessayer.';
+                }
+                
+                // Réactiver le bouton
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Vérifier le code';
+            });
+        });
+    }
+    
+    // Gérer la demande d'un nouveau code
+    if (resendCodeBtn) {
+        resendCodeBtn.addEventListener('click', function() {
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Envoi en cours...';
+            
+            fetch('/resend-affiliation-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Afficher un message de succès
+                    if (affiliationAlert) {
+                        affiliationAlert.classList.remove('d-none', 'alert-danger');
+                        affiliationAlert.classList.add('alert-success');
+                        affiliationAlert.textContent = data.message;
+                    }
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                // Afficher un message d'erreur
+                if (affiliationAlert) {
+                    affiliationAlert.classList.remove('d-none', 'alert-success');
+                    affiliationAlert.classList.add('alert-danger');
+                    affiliationAlert.textContent = error.message || 'Une erreur est survenue. Veuillez réessayer.';
+                }
+            })
+            .finally(() => {
+                // Réactiver le bouton
+                this.disabled = false;
+                this.textContent = 'Recevoir un nouveau code';
+            });
+        });
+    }
+});

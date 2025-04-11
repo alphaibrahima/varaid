@@ -4,21 +4,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReservationController;
-use Illuminate\Support\Facades\Auth; 
-// Désactiver les routes de vérification email par défaut
-
-// Routes authentifiées
-Route::middleware(['auth', 'web'])->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::post('/reservation/confirm', [ReservationController::class, 'confirmReservation'])
-        ->name('reservation.confirm');
-    Route::get('/reservation/receipt/{code}', [ReservationController::class, 'showReceipt'])
-        ->name('reservation.receipt');
-    Route::get('/reservation/receipt/{code}/download', [ReservationController::class, 'downloadReceipt'])
-        ->name('reservation.receipt.download');
-});
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\AssociationDashboardController;
+use App\Http\Controllers\AffiliationVerificationController;
+use Illuminate\Support\Facades\Auth;
 
 // Routes d'authentification
 Route::get('/register', [RegisteredUserController::class, 'create'])
@@ -32,42 +21,61 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', [ReservationController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
-Route::get('/get-slots/{date}', [ReservationController::class, 'getSlots'])->name('get.slots');
-
-
+// Routes protégées par authentification simple
 Route::middleware(['auth', 'web'])->group(function () {
-    // Routes existantes...
-    Route::post('/create-payment-intent', [App\Http\Controllers\PaymentController::class, 'createPaymentIntent'])
+    // Profil utilisateur
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // Reçus de réservation (pas besoin d'affiliation vérifiée)
+    Route::get('/reservation/receipt/{code}', [ReservationController::class, 'showReceipt'])
+        ->name('reservation.receipt');
+    Route::get('/reservation/receipt/{code}/download', [ReservationController::class, 'downloadReceipt'])
+        ->name('reservation.receipt.download');
+    
+    // Routes de vérification d'affiliation (UI)
+    Route::get('/verify-affiliation', [AffiliationVerificationController::class, 'show'])
+        ->name('affiliation.verify');
+    Route::post('/verify-affiliation', [AffiliationVerificationController::class, 'verify']);
+    Route::post('/resend-affiliation-code', [AffiliationVerificationController::class, 'resend'])
+        ->name('affiliation.resend');
+
+    // Routes de vérification d'affiliation (AJAX)
+    Route::post('/verify-affiliation-code', [ReservationController::class, 'verifyAffiliationCode'])
+        ->name('affiliation.verify.ajax');
+    Route::post('/resend-affiliation-code', [ReservationController::class, 'resendAffiliationCode'])
+        ->name('affiliation.resend.ajax');
+    
+    // Routes de paiement
+    Route::post('/create-payment-intent', [PaymentController::class, 'createPaymentIntent'])
         ->name('payment.create-intent');
+    Route::get('/payment-success', [PaymentController::class, 'handleSuccess'])
+        ->name('payment.success');
+    
+    // Dashboard principal
+    Route::get('/dashboard', [ReservationController::class, 'index'])
+        ->middleware('verified')
+        ->name('dashboard');
 });
 
-Route::get('/payment-success', [App\Http\Controllers\PaymentController::class, 'handleSuccess'])
-    ->name('payment.success')
-    ->middleware('auth');
-
 // Routes pour le dashboard des associations
-// Route::middleware(['auth', 'role:association'])->prefix('association')->name('association.')->group(function () {
-//     Route::get('/dashboard', [App\Http\Controllers\AssociationDashboardController::class, 'index'])->name('dashboard');
-//     Route::get('/buyers', [App\Http\Controllers\AssociationDashboardController::class, 'buyers'])->name('buyers');
-//     Route::get('/buyers/{id}', [App\Http\Controllers\AssociationDashboardController::class, 'buyerDetails'])->name('buyers.details');
-//     Route::post('/buyers/{id}/toggle-status', [App\Http\Controllers\AssociationDashboardController::class, 'toggleBuyerStatus'])->name('buyers.toggle-status');
-//     Route::get('/reservations', [App\Http\Controllers\AssociationDashboardController::class, 'reservations'])->name('reservations');
-//     Route::get('/quotas', [App\Http\Controllers\AssociationDashboardController::class, 'quotas'])->name('quotas');
-// });
-
-// Routes pour le dashboard des associations
-Route::middleware(['auth'])->prefix('association')->name('association.')->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\AssociationDashboardController::class, 'index'])->name('dashboard');
-    Route::get('/buyers', [App\Http\Controllers\AssociationDashboardController::class, 'buyers'])->name('buyers');
-    Route::get('/buyers/{id}', [App\Http\Controllers\AssociationDashboardController::class, 'buyerDetails'])->name('buyers.details');
-    Route::post('/buyers/{id}/toggle-status', [App\Http\Controllers\AssociationDashboardController::class, 'toggleBuyerStatus'])->name('buyers.toggle-status');
-    Route::get('/reservations', [App\Http\Controllers\AssociationDashboardController::class, 'reservations'])->name('reservations');
-    Route::get('/quotas', [App\Http\Controllers\AssociationDashboardController::class, 'quotas'])->name('quotas');
+Route::middleware(['auth', 'web'])->prefix('association')->name('association.')->group(function () {
+    Route::get('/dashboard', [AssociationDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/buyers', [AssociationDashboardController::class, 'buyers'])->name('buyers');
+    Route::get('/buyers/{id}', [AssociationDashboardController::class, 'buyerDetails'])->name('buyers.details');
+    Route::post('/buyers/{id}/toggle-status', [AssociationDashboardController::class, 'toggleBuyerStatus'])->name('buyers.toggle-status');
+    Route::get('/reservations', [AssociationDashboardController::class, 'reservations'])->name('reservations');
+    Route::get('/quotas', [AssociationDashboardController::class, 'quotas'])->name('quotas');
 });
 
-
-
+// Protégez les routes de réservation avec le middleware d'affiliation
+Route::middleware(['auth', 'web', 'verified.affiliation'])->group(function () {
+    Route::get('/reservation', [ReservationController::class, 'index'])->name('reservation.index');
+    Route::post('/reservation/confirm', [ReservationController::class, 'confirmReservation'])
+        ->name('reservation.confirm');
+    Route::get('/get-slots/{date}', [ReservationController::class, 'getSlots'])->name('get.slots');
+});
 
 // Route temporaire pour tester les clés Stripe
 Route::get('/test-stripe-keys', function() {

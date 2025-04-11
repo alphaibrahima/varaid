@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Providers\RouteServiceProvider;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
+use App\Events\AcheteurRegistered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -61,8 +62,12 @@ class RegisteredUserController extends Controller
             'association_id' => $request->association_id,
             'role' => 'buyer',
         ]);
+
+        // Générer le code d'affiliation
+        $affiliationCode = $user->generateAffiliationCode();
     
         event(new Registered($user));
+        event(new AcheteurRegistered($user));
     
         Auth::login($user);
     

@@ -29,6 +29,9 @@ class User extends Authenticatable
         'role',
         'association_id',
         'is_active',
+        'affiliation_code',
+        'affiliation_verified',
+        'affiliation_verified_at',
     ];
 
     protected $hidden = [
@@ -39,10 +42,33 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'affiliation_verified' => 'boolean',
+        'affiliation_verified_at' => 'datetime',
     ];
 
 
-    // Dans app/Models/User.php
+    // Ajoutez cette méthode pour générer un code d'affiliation
+    public function generateAffiliationCode()
+    {
+        $code = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 6));
+        $this->update(['affiliation_code' => $code]);
+        return $code;
+    }
+
+    // Méthode pour marquer l'affiliation comme vérifiée
+    public function markAffiliationAsVerified()
+    {
+        return $this->update([
+            'affiliation_verified' => true,
+            'affiliation_verified_at' => now(),
+        ]);
+    }
+
+    // Vérifier si l'affiliation est confirmée
+    public function hasVerifiedAffiliation()
+    {
+        return $this->affiliation_verified;
+    }
 
     
 

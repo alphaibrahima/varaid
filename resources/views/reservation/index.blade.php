@@ -63,19 +63,37 @@
                     <div class="step-dot" data-step="4"></div>
                 </div>
             </div>
-            <!-- fin indicateur de progression -->
+
+
+            <!-- Alertes spécifiques à chaque étape -->
+            <div id="alert-step-1" class="alert alert-info mb-4 step-alert">
+                <i class="bi bi-info-circle"></i> 
+                En confirmant votre choix, vous recevrez une notification par sms et par mail détaillant vos rendez-vous.
+            </div>
+            
+            <div id="alert-step-2" class="alert alert-info mb-4 step-alert" style="display: none;">
+                <i class="bi bi-info-circle"></i>
+                Votre horaire d’abattage sera identique au créneau choisi. 
+            </div>
+            
+            <div id="alert-step-3" class="alert alert-info mb-4 step-alert" style="display: none;">
+                <i class="bi bi-info-circle"></i>
+                Un acompte de 100€ par réservataire est obligatoire. Acompte non remboursable.
+            </div>
+            
+            <div id="alert-step-4" class="alert alert-info mb-4 step-alert" style="display: none;">
+                <i class="bi bi-info-circle"></i>
+                En confirmant cette réservation, vous acceptez que l'heure choisie soit la même pour le jour de votre choix et pour l'abattement de l'agneau. Une notification vous sera envoyée par mail et par SMS avec les détails.
+            </div>
             
             <!-- Étape 1: Sélection du jour -->
             @include('reservation.partials.step1')
-            <!-- fin etape 1 -->
             
             <!-- Étape 2: Sélection de l'heure -->
             @include('reservation.partials.step2')
-            <!-- fin etape 2 -->
             
             <!-- Étape 3: Configuration de la commande -->
             @include('reservation.partials.step3')
-            <!-- fin etape3 -->
             
             <!-- Étape 4: Paiement et confirmation -->
             @include('reservation.partials.step4')
@@ -83,7 +101,8 @@
             
             <!-- Modal de confirmation -->
             @include('reservation.partials.modal')
-            <!-- fin modal de confirmation -->
+            {{-- modal code --}}
+            @include('reservation.partials.affiliation-modal')
 
         </div>
     </div>
@@ -100,13 +119,119 @@
             // name: '{{ $user->name }}',
             // firstName: '{{ $user->firstname}}',
             // Si vous avez les champs séparés de prénom et nom dans votre base de données, utilisez-les
+            full_address: '{{ $user->full_address }}',
             firstName: '{{ $user->firstname}}',
             lastName: '{{ $user->name }}',
-            email: '{{ $user->email }}'
+            email: '{{ $user->email }}',
+            phone: '{{ $user->phone }}'
         };
         window.stripeConfig = {
             publicKey: "{{ config('services.stripe.key') }}"
         };
+
+
+        // script pour gérer l'affichage de la modal et la vérification du code
+        document.addEventListener('DOMContentLoaded', function() {
+            // Variables globales
+            const affiliationVerified = {{ $affiliationVerified ? 'true' : 'false' }};
+            const affiliationModal = new bootstrap.Modal(document.getElementById('affiliationModal'));
+            const affiliationForm = document.getElementById('affiliation-form');
+            const affiliationAlert = document.getElementById('affiliation-alert');
+            const resendCodeBtn = document.getElementById('resend-code-btn');
+            
+            // Afficher la modal si l'affiliation n'est pas vérifiée
+            if (!affiliationVerified) {
+                affiliationModal.show();
+            }
+            
+            // Gérer la soumission du formulaire
+            affiliationForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const code = document.getElementById('affiliation_code').value;
+                const verifyBtn = document.getElementById('verify-code-btn');
+                
+                // Désactiver le bouton pendant la vérification
+                verifyBtn.disabled = true;
+                verifyBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Vérification...';
+                
+                // Envoyer la requête AJAX
+                fetch('{{ route("affiliation.verify.ajax") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ affiliation_code: code })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Afficher un message de succès
+                        affiliationAlert.classList.remove('d-none', 'alert-danger');
+                        affiliationAlert.classList.add('alert-success');
+                        affiliationAlert.textContent = data.message;
+                        
+                        // Fermer la modal après 2 secondes
+                        setTimeout(() => {
+                            affiliationModal.hide();
+                            // Rafraîchir la page pour mettre à jour l'interface
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    // Afficher un message d'erreur
+                    affiliationAlert.classList.remove('d-none', 'alert-success');
+                    affiliationAlert.classList.add('alert-danger');
+                    affiliationAlert.textContent = error.message || 'Une erreur est survenue. Veuillez réessayer.';
+                    
+                    // Réactiver le bouton
+                    verifyBtn.disabled = false;
+                    verifyBtn.textContent = 'Vérifier le code';
+                });
+            });
+            
+            // Gérer la demande d'un nouveau code
+            resendCodeBtn.addEventListener('click', function() {
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Envoi en cours...';
+                
+                fetch('{{ route("affiliation.resend.ajax") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Afficher un message de succès
+                        affiliationAlert.classList.remove('d-none', 'alert-danger');
+                        affiliationAlert.classList.add('alert-success');
+                        affiliationAlert.textContent = data.message;
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    // Afficher un message d'erreur
+                    affiliationAlert.classList.remove('d-none', 'alert-success');
+                    affiliationAlert.classList.add('alert-danger');
+                    affiliationAlert.textContent = error.message || 'Une erreur est survenue. Veuillez réessayer.';
+                })
+                .finally(() => {
+                    // Réactiver le bouton
+                    this.disabled = false;
+                    this.textContent = 'Recevoir un nouveau code';
+                });
+            });
+        });
     </script>
 </body>
 </html>
