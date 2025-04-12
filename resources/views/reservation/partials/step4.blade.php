@@ -17,8 +17,7 @@
                     <p><strong>Association/Mosquée:</strong> <span id="recap-assoc">{{ $userAssociation }}</span></p>
                 </div>
                 <div class="col-md-6">
-                    <p><strong>Taille:</strong> <span id="recap-size">Grand (~25kg)</span></p>
-                    <p><strong>Quantité:</strong> <span id="recap-quantity">1</span></p>
+                    <p><strong>Sélection:</strong> <span id="recap-selection">Sélection sur place</span></p>                    <p><strong>Quantité:</strong> <span id="recap-quantity">1</span></p>
                     <p><strong>Acompte à payer:</strong> <span class="text-primary fw-bold" id="recap-deposit">100,00 €</span></p>
                 </div>
             </div>

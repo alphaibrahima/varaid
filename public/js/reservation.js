@@ -18,6 +18,7 @@ let selectedDay = '';
 let selectedTime = '';
 let selectedSize = 'grand';
 let selectedQuantity = 1;
+let skipSelection = false;
 
 // Fonction pour afficher l'alerte pour l'étape courante
 function showAlertForStep(step) {
@@ -124,12 +125,24 @@ function selectDay(day) {
 
             if (Array.isArray(response) && response.length > 0) {
                 response.forEach(slot => {
+                    let placesText = slot.places_restantes <= 0 
+                        ? "Complet" 
+                        : `${slot.places_restantes} places restantes`;
+                    
+                    let cardClass = slot.places_restantes <= 0 
+                        ? "card creneaux-heure bg-light text-muted" 
+                        : "card creneaux-heure";
+                    
+                    let clickAttr = slot.places_restantes <= 0 
+                        ? "" 
+                        : `onclick="selectTimeSlot('${slot.id}', '${slot.start_time}')"`;
+                    
                     let cardHtml = `
                         <div class="col-md-4 mb-4"> <!-- Colonne avec espacement -->
-                            <div class="card creneaux-heure" onclick="selectTimeSlot('${slot.id}', '${slot.start_time}')">
+                            <div class="${cardClass}" ${clickAttr}>
                                 <div class="card-body text-center">
                                     <h5 class="card-title">${slot.start_time.substring(0, 5)}</h5>
-                                    <p class="card-text"><small class="text-muted">${slot.max_reservations} places restantes</small></p>
+                                    <p class="card-text"><small class="text-muted">${placesText}</small></p>
                                 </div>
                             </div>
                         </div>`;
@@ -225,6 +238,29 @@ function decrementQuantity() {
         updateDeposit(); // Mettre à jour l'acompte
         generateOwnerFields(); // Mettre à jour les champs propriétaires
     }
+}
+
+// Option de ne pas venir choisir l'agneau
+function toggleSkipSelection() {
+    skipSelection = document.getElementById('skipSelection').checked;
+    
+    // Stocker la valeur dans localStorage pour la conserver entre les étapes
+    localStorage.setItem('skipSelection', skipSelection);
+    
+    // Mettre à jour le récapitulatif
+    const selectionInfo = skipSelection ? 'Ne viendra pas choisir' : 'Sélection sur place';
+    
+    // Mettre à jour le récapitulatif si l'élément existe
+    if (document.getElementById('recap-selection')) {
+        document.getElementById('recap-selection').textContent = selectionInfo;
+    }
+    
+    // Mettre à jour le modal de confirmation si l'élément existe
+    if (document.getElementById('confirmation-selection')) {
+        document.getElementById('confirmation-selection').textContent = selectionInfo;
+    }
+    
+    console.log("Option 'Ne pas venir choisir':", skipSelection);
 }
 
 // Sélection de la taille
@@ -608,13 +644,22 @@ function submitReservation(paymentIntentId, ownersData) {
     const slotId = localStorage.getItem('selectedSlotId');
     const quantity = parseInt(document.getElementById('quantity').value) || 1;
     
+    // Récupérer la valeur skipSelection depuis localStorage
+    skipSelection = document.getElementById('skipSelection')?.checked || localStorage.getItem('skipSelection') === 'true';
+    
+    console.log('Skip Selection avant envoi:', skipSelection);
+    
     if (!csrfToken) {
         console.error('CSRF token missing');
         alert('Erreur: Token CSRF manquant');
         return;
     }
     
-    console.log('Soumission de la réservation...', {paymentIntentId, ownersData});
+    console.log('Soumission de la réservation...', {
+        paymentIntentId,
+        ownersData,
+        skipSelection
+    });
     
     const data = {
         reservationNumber: 'R-' + Math.floor(100000 + Math.random() * 900000),
@@ -622,6 +667,7 @@ function submitReservation(paymentIntentId, ownersData) {
         cardholderEmail: document.getElementById('cardholder-email').value,
         slotId: parseInt(slotId),
         quantity: quantity,
+        skipSelection: skipSelection,
         paymentIntentId: paymentIntentId,
         owners: ownersData
     };
@@ -644,6 +690,7 @@ function submitReservation(paymentIntentId, ownersData) {
             // Vider les données locales
             localStorage.removeItem('selectedSlotId');
             localStorage.removeItem('selectedTime');
+            localStorage.removeItem('skipSelection');
             
             // Rediriger vers la page de reçu
             if (data.redirectUrl) {
@@ -716,9 +763,30 @@ function updateRecap() {
         document.getElementById('recap-quantity').textContent = quantity;
     }
     
+    // Mettre à jour l'option "Ne pas venir choisir l'agneau"
+    if (document.getElementById('skipSelection')) {
+        // Restaurer l'état depuis le localStorage si disponible
+        const savedSkipSelection = localStorage.getItem('skipSelection');
+        if (savedSkipSelection) {
+            skipSelection = savedSkipSelection === 'true';
+            document.getElementById('skipSelection').checked = skipSelection;
+        }
+        
+        // Mettre à jour le récapitulatif
+        const selectionInfo = skipSelection ? 'Ne viendra pas choisir' : 'Sélection sur place';
+        if (document.getElementById('recap-selection')) {
+            document.getElementById('recap-selection').textContent = selectionInfo;
+        }
+        
+        // Mettre à jour le modal de confirmation si l'élément existe
+        if (document.getElementById('confirmation-selection')) {
+            document.getElementById('confirmation-selection').textContent = selectionInfo;
+        }
+    }
+
     // Générer les champs de propriétaires
     generateOwnerFields();
-    
+
     // Mettre à jour l'acompte
     updateDeposit();
 }
@@ -838,5 +906,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.textContent = 'Recevoir un nouveau code';
             });
         });
+    }
+    
+    // Initialiser la valeur skipSelection depuis localStorage au chargement
+    const savedSkipSelection = localStorage.getItem('skipSelection');
+    if (savedSkipSelection) {
+        skipSelection = savedSkipSelection === 'true';
+        
+        // Mettre à jour la case à cocher si elle existe
+        const skipSelectionCheckbox = document.getElementById('skipSelection');
+        if (skipSelectionCheckbox) {
+            skipSelectionCheckbox.checked = skipSelection;
+        }
     }
 });

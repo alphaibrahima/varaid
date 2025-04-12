@@ -36,13 +36,24 @@ class ReservationController extends Controller
         if (!strtotime($date)) {
             return response()->json(['error' => 'Date invalide'], 400);
         }
-
-        // Récupérer les créneaux disponibles pour cette date
+    
+        // Récupérer les créneaux disponibles pour cette date avec le nombre de places restantes
         $slots = Slot::where('date', $date)
             ->where('available', true)
             ->orderBy('start_time')
-            ->get();
-
+            ->get()
+            ->map(function($slot) {
+                // Calculer le nombre de réservations déjà effectuées pour ce créneau
+                $reservedCount = Reservation::where('slot_id', $slot->id)
+                    ->where('status', '!=', 'canceled')
+                    ->sum('quantity');
+                
+                // Ajouter la propriété places_restantes
+                $slot->places_restantes = max(0, $slot->max_reservations - $reservedCount);
+                
+                return $slot;
+            });
+    
         return response()->json($slots);
     }
 
@@ -55,11 +66,12 @@ class ReservationController extends Controller
         };
     }
 
+    // Dans la méthode confirmReservation du ReservationController
     public function confirmReservation(Request $request)
     {
         try {
             \Log::info('Reservation request received:', $request->all());
-    
+
             $user = Auth::user();
             if (!$user) {
                 return response()->json([
@@ -67,74 +79,52 @@ class ReservationController extends Controller
                     'message' => 'User not authenticated'
                 ], 401);
             }
-            
-            // Vérifier si l'affiliation est confirmée pour les acheteurs
-            if ($user->role === 'buyer' && !$user->hasVerifiedAffiliation()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Votre affiliation n\'a pas été vérifiée. Veuillez entrer votre code d\'affiliation.',
-                    'requireAffiliation' => true
-                ], 403);
-            }
-    
+
             // Validate the request
             $validated = $request->validate([
                 'reservationNumber' => 'required|string',
                 'cardholderName' => 'required|string',
                 'cardholderEmail' => 'required|email',
                 'slotId' => 'required|integer|exists:slots,id',
-                'quantity' => 'required|integer|min:1|max:5',
-                'paymentIntentId' => 'required|string',
-                'owners' => 'required|array|min:1',
-                'owners.*.firstname' => 'required|string',
-                'owners.*.lastname' => 'required|string'
+                'quantity' => 'required|integer|min:1|max:5'
             ]);
-    
+
+            // Vérifier si le créneau a assez de capacité
+            $slot = Slot::findOrFail($validated['slotId']);
+            $currentReservations = Reservation::where('slot_id', $slot->id)->sum('quantity');
+            
+            if (($currentReservations + $validated['quantity']) > $slot->max_reservations) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Plus assez de places disponibles pour ce créneau'
+                ], 422);
+            }
+
             $reservation = Reservation::create([
                 'user_id' => $user->id,
                 'slot_id' => $validated['slotId'],
-                'association_id' => $user->association_id ?? null,
+                'association_id' => $user->association ? $user->association->id : null,
                 'size' => 'grand',
                 'quantity' => $validated['quantity'],
                 'code' => $validated['reservationNumber'],
-                'status' => 'confirmed',
+                'status' => 'pending',
                 'date' => now(),
-                'owners_data' => json_encode($validated['owners']),
-                'payment_intent_id' => $validated['paymentIntentId']
             ]);
-    
-            // Charger les relations nécessaires pour la notification
-            $reservation->load(['user', 'slot', 'association']);
-    
-            // Envoi de l'email de confirmation avec le reçu en PDF
-            try {
-                // Envoi de l'email de confirmation avec le reçu en PDF
-                $user->notify(new \App\Notifications\ReservationConfirmation($reservation));
-            
-                // Envoyer également un email à l'adresse fournie dans le formulaire si différente
-                if ($validated['cardholderEmail'] !== $user->email) {
-                    Notification::route('mail', [
-                        $validated['cardholderEmail'] => $validated['cardholderName']
-                    ])->notify(new \App\Notifications\ReservationConfirmation($reservation));
-                }
-            } catch (\Exception $emailError) {
-                \Log::warning('Erreur lors de l\'envoi d\'email: ' . $emailError->getMessage());
-                // Ne pas bloquer la confirmation de réservation si l'email échoue
-            }
-    
+
+            // Return success response with redirect URL
             return response()->json([
                 'status' => 'success',
                 'message' => 'Réservation créée avec succès',
                 'data' => $reservation,
                 'redirectUrl' => route('reservation.receipt', ['code' => $reservation->code])
             ]);
-    
+
         } catch (\Exception $e) {
             \Log::error('Reservation error:', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-    
+
             return response()->json([
                 'status' => 'error',
                 'message' => $e->getMessage()

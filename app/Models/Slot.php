@@ -70,4 +70,11 @@ class Slot extends Model
     {
         return $this->available && ($this->reservations_count < $this->max_reservations);
     }
+
+    // Dans le modèle Slot.php, ajoutons cette méthode
+    public function getAvailablePlacesAttribute()
+    {
+        $reservedCount = $this->reservations()->where('status', '!=', 'canceled')->sum('quantity');
+        return max(0, $this->max_reservations - $reservedCount);
+    }
 }

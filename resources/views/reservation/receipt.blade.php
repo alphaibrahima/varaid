@@ -16,7 +16,13 @@
                             <p><strong>Date:</strong> {{ Carbon\Carbon::parse($reservation->date)->format('d/m/Y') }}</p>
                             <p><strong>Créneau:</strong> {{ $reservation->slot->start_time }}</p>
                             <p><strong>Quantité:</strong> {{ $reservation->quantity }}</p>
-                            <p><strong>Taille:</strong> {{ $reservation->size }}</p>
+                            <p><strong>Sélection sur place:</strong> 
+                                @if($reservation->skip_selection)
+                                    Non (l'agneau sera attribué par l'association)
+                                @else
+                                    Oui (viendra choisir l'agneau)
+                                @endif
+                            </p>
                             <p><strong>Montant de l'acompte:</strong> {{ $reservation->quantity * 100 }}€</p>
                         </div>
                         <div class="col-md-6">

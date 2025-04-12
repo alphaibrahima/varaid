@@ -41,6 +41,11 @@ class ReservationConfirmation extends Notification implements ShouldQueue
         // Formater l'heure pour n'afficher que l'heure (sans date)
         $formattedTime = date('H:i', strtotime($this->reservation->slot->start_time));
         
+        // Préparer le message sur la sélection sur place
+        $selectionMessage = $this->reservation->skip_selection 
+            ? 'Non (l\'agneau sera attribué par l\'association)' 
+            : 'Oui (vous viendrez choisir votre agneau)';
+        
         $mailMessage = (new MailMessage)
             ->subject('Confirmation de votre réservation d\'agneau')
             ->greeting('Bonjour ' . $notifiable->name)
@@ -49,9 +54,9 @@ class ReservationConfirmation extends Notification implements ShouldQueue
             ->line('Date: ' . $this->reservation->slot->date->format('d/m/Y'))
             ->line('Heure: ' . $formattedTime)
             ->line('Quantité: ' . $this->reservation->quantity)
-            ->line('Taille: ' . ucfirst($this->reservation->size))
+            ->line('Sélection sur place: ' . $selectionMessage)
             ->line('Acompte payé: ' . ($this->reservation->quantity * 100) . '€')
-            ->line('Le solde de ' . ($this->reservation->quantity * 100) . '€ sera à régler lors de la récupération.');
+            ->line('Le solde sera à régler lors de la récupération.');
 
         // Ajouter les informations des propriétaires
         if (!empty($this->reservation->owners_data)) {
@@ -97,4 +102,3 @@ class ReservationConfirmation extends Notification implements ShouldQueue
         $pdf->save($this->pdfPath);
     }
 }
-

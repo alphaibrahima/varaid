@@ -20,8 +20,8 @@
                         <p><strong>Jour :</strong> <span id="confirmation-day">Mardi 11 Mars 2025</span></p>
                         <p><strong>Heure :</strong> <span id="confirmation-time">09:30</span></p>
                         <p><strong>Association :</strong> <span id="confirmation-assoc">Mosquée de la Paix</span></p>
-                        <p><strong>Taille :</strong> <span id="confirmation-size">Grand (~25kg)</span></p>
-                        <p><strong>Quantité :</strong> <span id="confirmation-quantity">1</span></p>
+                        <!-- Ajouter dans les détails de la réservation -->
+                        <p><strong>Sélection:</strong> <span id="confirmation-selection">Sélection sur place</span></p>                        <p><strong>Quantité :</strong> <span id="confirmation-quantity">1</span></p>
                         <p><strong>Acompte payé :</strong> <span class="text-success">100,00 €</span></p>
                     </div>
                 </div>

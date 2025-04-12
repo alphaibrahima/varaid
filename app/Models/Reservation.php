@@ -19,13 +19,15 @@ class Reservation extends Model
         'owners_data',
         'code', 
         'status',
-        'date', 
+        'date',
+        'skip_selection',
         'payment_intent_id' 
     ];
 
     protected $casts = [
         'date' => 'datetime',
         'association_id' => 'integer',
+        'skip_selection' => 'boolean',
         'owners_data' => 'array',
     ];
 

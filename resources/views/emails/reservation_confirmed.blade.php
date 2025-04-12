@@ -11,7 +11,13 @@
     <ul>
         <li>Date : {{ $reservation->slot->date }}</li>
         <li>Heure : {{ $reservation->slot->start_time }}</li>
-        <li>Taille : {{ $reservation->size }}</li>
+        <p><strong>Sélection sur place:</strong> 
+            @if($reservation->skip_selection)
+                Non (l'agneau sera attribué par l'association)
+            @else
+                Oui (viendra choisir l'agneau)
+            @endif
+        </p>
     </ul>
     <p>Merci et à bientôt !</p>
 </body>

@@ -69,8 +69,14 @@
                 <td>{{ $reservation->quantity }}</td>
             </tr>
             <tr>
-                <th>Taille</th>
-                <td>{{ ucfirst($reservation->size) }}</td>
+                <th>Sélection sur place</th>
+                <td> 
+                    @if($reservation->skip_selection)
+                        Non (l'agneau sera attribué par l'association)
+                    @else
+                        Oui (viendra choisir l'agneau)
+                    @endif
+                </td>
             </tr>
             <tr>
                 <th>Acompte payé</th>
