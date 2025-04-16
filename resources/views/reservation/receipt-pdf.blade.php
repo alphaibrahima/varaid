@@ -82,10 +82,10 @@
                 <th>Acompte payé</th>
                 <td>{{ $reservation->quantity * 100 }}€</td>
             </tr>
-            <tr>
+            {{-- <tr>
                 <th>Solde à payer</th>
                 <td class="important">{{ $reservation->quantity * 100 }}€ (à régler sur place)</td>
-            </tr>
+            </tr> --}}
         </table>
     </div>
 
@@ -97,13 +97,22 @@
                 <th>Prénom</th>
                 <th>Nom</th>
             </tr>
-            @foreach(json_decode($reservation->owners_data) as $index => $owner)
-            <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>{{ $owner->firstname }}</td>
-                <td>{{ $owner->lastname }}</td>
-            </tr>
-            @endforeach
+            @if($reservation->owners_data && is_string($reservation->owners_data))
+                @php $owners = json_decode($reservation->owners_data); @endphp
+                @if(is_array($owners) || is_object($owners))
+                    @foreach($owners as $index => $owner)
+                        <tr>
+                            <td>{{ $index + 1 }}</td>
+                            <td>{{ $owner->firstname }}</td>
+                            <td>{{ $owner->lastname }}</td>
+                        </tr>
+                    @endforeach
+                @else
+                    <tr><td colspan="3">Aucune information de propriétaire disponible</td></tr>
+                @endif
+            @else
+                <tr><td colspan="3">Aucune information de propriétaire disponible</td></tr>
+            @endif
         </table>
     </div>
 

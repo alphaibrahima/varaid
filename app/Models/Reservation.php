@@ -16,12 +16,13 @@ class Reservation extends Model
         'association_id', 
         'size', 
         'quantity', 
-        'owners_data',
         'code', 
         'status',
         'date',
         'skip_selection',
+        'owners_data',
         'payment_intent_id' 
+        
     ];
 
     protected $casts = [

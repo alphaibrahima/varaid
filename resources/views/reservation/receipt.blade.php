@@ -17,11 +17,13 @@
                             <p><strong>Créneau:</strong> {{ $reservation->slot->start_time }}</p>
                             <p><strong>Quantité:</strong> {{ $reservation->quantity }}</p>
                             <p><strong>Sélection sur place:</strong> 
-                                @if($reservation->skip_selection)
-                                    Non (l'agneau sera attribué par l'association)
-                                @else
-                                    Oui (viendra choisir l'agneau)
-                                @endif
+                                <td> 
+                                    @if($reservation->skip_selection)
+                                        Non (l'agneau sera attribué par l'association)
+                                    @else
+                                        Oui (viendra choisir l'agneau)
+                                    @endif
+                                </td>
                             </p>
                             <p><strong>Montant de l'acompte:</strong> {{ $reservation->quantity * 100 }}€</p>
                         </div>

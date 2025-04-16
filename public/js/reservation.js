@@ -200,11 +200,34 @@ function updateDeposit() {
     depositElement.textContent = `${deposit},00 €`;
 }
 
-// Incrémentation de la quantité (modifiée pour mettre à jour les champs propriétaires)
+// Incrémentation de la quantité avec vérification de disponibilité
 function incrementQuantity() {
     const quantityInput = document.getElementById('quantity');
-    if (parseInt(quantityInput.value) < parseInt(quantityInput.max)) {
-        selectedQuantity = parseInt(quantityInput.value) + 1;
+    const currentQuantity = parseInt(quantityInput.value);
+    const maxQuantity = parseInt(quantityInput.max);
+    const placesRestantes = parseInt(localStorage.getItem('placesRestantes') || '0');
+    const quantityAlert = document.getElementById('quantityAlert');
+    
+    // Vérifier si on ne dépasse pas le maximum autorisé (5) et les places disponibles
+    if (currentQuantity < maxQuantity) {
+        const newQuantity = currentQuantity + 1;
+        
+        // Vérifier si la nouvelle quantité dépasse les places disponibles
+        if (newQuantity > placesRestantes) {
+            // Afficher l'alerte
+            if (quantityAlert) {
+                quantityAlert.style.display = 'block';
+                document.getElementById('quantityAlertMessage').textContent = 
+                    `Attention: Il ne reste que ${placesRestantes} place(s) disponible(s) pour ce créneau.`;
+            }
+            return; // Ne pas incrémenter
+        }
+        
+        // Si l'alerte est visible, la masquer
+        if (quantityAlert) quantityAlert.style.display = 'none';
+        
+        // Mettre à jour la quantité
+        selectedQuantity = newQuantity;
         quantityInput.value = selectedQuantity;
         
         // Mettre à jour le récapitulatif
@@ -216,27 +239,24 @@ function incrementQuantity() {
         }
         
         updateDeposit(); // Mettre à jour l'acompte
-        generateOwnerFields(); // Mettre à jour les champs propriétaires
     }
 }
 
-// Décrémentation de la quantité (modifiée pour mettre à jour les champs propriétaires)
+// Décrémentation de la quantité
 function decrementQuantity() {
     const quantityInput = document.getElementById('quantity');
     if (parseInt(quantityInput.value) > parseInt(quantityInput.min)) {
         selectedQuantity = parseInt(quantityInput.value) - 1;
         quantityInput.value = selectedQuantity;
-        
-        // Mettre à jour le récapitulatif
-        if (document.getElementById('recap-quantity')) {
-            document.getElementById('recap-quantity').textContent = selectedQuantity;
-        }
-        if (document.getElementById('confirmation-quantity')) {
-            document.getElementById('confirmation-quantity').textContent = selectedQuantity;
-        }
-        
+        document.getElementById('recap-quantity').textContent = selectedQuantity;
+        document.getElementById('confirmation-quantity').textContent = selectedQuantity;
         updateDeposit(); // Mettre à jour l'acompte
-        generateOwnerFields(); // Mettre à jour les champs propriétaires
+        
+        // Si une alerte est visible, la masquer car nous diminuons la quantité
+        const quantityAlert = document.getElementById('quantityAlert');
+        if (quantityAlert) {
+            quantityAlert.style.display = 'none';
+        }
     }
 }
 
@@ -622,16 +642,19 @@ function collectOwnersData() {
     for (let i = 1; i <= quantity; i++) {
         const firstname = document.getElementById(`owner-firstname-${i}`).value;
         const lastname = document.getElementById(`owner-lastname-${i}`).value;
-        const email = document.getElementById(`owner-email-${i}`).value;
-        const phone = document.getElementById(`owner-phone-${i}`).value;
-        const address = document.getElementById(`owner-address-${i}`).value;
+        // Assurez-vous que ces valeurs ne sont pas vides
         
         ownersData.push({
             firstname: firstname,
             lastname: lastname,
-            email: email,
-            phone: phone,
-            address: address
+            email: document.getElementById(`owner-email-${i}`).value,
+            phone: document.getElementById(`owner-phone-${i}`).value,
+            address: document.getElementById(`owner-address-${i}`).value
+        });
+        
+        console.log(`Propriétaire ${i}:`, {
+            firstname, lastname, 
+            email: document.getElementById(`owner-email-${i}`).value
         });
     }
     
@@ -662,15 +685,18 @@ function submitReservation(paymentIntentId, ownersData) {
     });
     
     const data = {
-        reservationNumber: 'R-' + Math.floor(100000 + Math.random() * 900000),
-        cardholderName: document.getElementById('cardholder-name').value,
-        cardholderEmail: document.getElementById('cardholder-email').value,
-        slotId: parseInt(slotId),
+        reservation_number: 'R-' + Math.floor(100000 + Math.random() * 900000),
+        cardholder_name: document.getElementById('cardholder-name').value,
+        cardholder_email: document.getElementById('cardholder-email').value,
+        slot_id: parseInt(slotId),                        
         quantity: quantity,
-        skipSelection: skipSelection,
-        paymentIntentId: paymentIntentId,
+        skip_selection: skipSelection,                    
+        payment_intent_id: paymentIntentId,               
         owners: ownersData
     };
+    
+    // Ajouter pour déboguer
+    console.log('Données JSON avant envoi:', JSON.stringify(data, null, 2));
     
     fetch('/reservation/confirm', {
         method: 'POST',

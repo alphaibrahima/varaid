@@ -16,6 +16,8 @@
                         <button class="btn btn-outline-secondary" type="button" onclick="incrementQuantity()">+</button>
                     </div>
                     <small class="form-text text-muted">Maximum 4 agneaux par réservation</small>
+                    <!-- Ajouter cette div d'alerte -->
+                    <div id="quantity-alert" style="display: none;"></div>
                 </div>
 
                 <div class="col-md-6">
