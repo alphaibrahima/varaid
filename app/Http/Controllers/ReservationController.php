@@ -82,6 +82,15 @@ class ReservationController extends Controller
                 ], 401);
             }
             
+            // Vérifier si l'affiliation est confirmée pour les acheteurs
+            if ($user->role === 'buyer' && !$user->hasVerifiedAffiliation()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Votre affiliation n\'a pas été vérifiée. Veuillez entrer votre code d\'affiliation.',
+                    'requireAffiliation' => true
+                ], 403);
+            }
+            
             // Créer manuellement un tableau avec la bonne structure
             $data = [
                 'slot_id' => $rawData['slot_id'] ?? $rawData['slotId'] ?? null,
@@ -89,7 +98,9 @@ class ReservationController extends Controller
                 'reservation_number' => $rawData['reservation_number'] ?? $rawData['reservationNumber'] ?? null,
                 'payment_intent_id' => $rawData['payment_intent_id'] ?? $rawData['paymentIntentId'] ?? null,
                 'skip_selection' => $rawData['skip_selection'] ?? $rawData['skipSelection'] ?? false,
-                'owners' => $rawData['owners'] ?? []
+                'owners' => $rawData['owners'] ?? [],
+                'cardholder_name' => $rawData['cardholder_name'] ?? $rawData['cardholderName'] ?? null,
+                'cardholder_email' => $rawData['cardholder_email'] ?? $rawData['cardholderEmail'] ?? null
             ];
             
             // Validation des données essentielles
@@ -109,11 +120,23 @@ class ReservationController extends Controller
                 ], 404);
             }
             
+            // Vérifier les places disponibles
+            $reservedCount = Reservation::where('slot_id', $data['slot_id'])
+                ->where('status', '!=', 'canceled')
+                ->sum('quantity');
+                
+            if (($reservedCount + $data['quantity']) > $slot->max_reservations) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Plus assez de places disponibles pour ce créneau'
+                ], 422);
+            }
+            
             // Créer la réservation
             $reservation = Reservation::create([
                 'user_id' => $user->id,
                 'slot_id' => $data['slot_id'],
-                'association_id' => $user->association_id,
+                'association_id' => $user->association_id ?? null,
                 'size' => 'grand', // Valeur par défaut
                 'quantity' => $data['quantity'],
                 'code' => $data['reservation_number'],
@@ -123,6 +146,25 @@ class ReservationController extends Controller
                 'owners_data' => json_encode($data['owners']),
                 'payment_intent_id' => $data['payment_intent_id']
             ]);
+            
+            // Charger les relations nécessaires pour la notification
+            $reservation->load(['user', 'slot', 'association']);
+            
+            // Envoi de l'email de confirmation avec le reçu en PDF
+            try {
+                // Envoi de l'email de confirmation avec le reçu en PDF
+                $user->notify(new \App\Notifications\ReservationConfirmation($reservation));
+            
+                // Envoyer également un email à l'adresse fournie dans le formulaire si différente
+                if ($data['cardholder_email'] && $data['cardholder_email'] !== $user->email) {
+                    \Illuminate\Support\Facades\Notification::route('mail', [
+                        $data['cardholder_email'] => $data['cardholder_name'] ?? 'Client'
+                    ])->notify(new \App\Notifications\ReservationConfirmation($reservation));
+                }
+            } catch (\Exception $emailError) {
+                \Log::warning('Erreur lors de l\'envoi d\'email: ' . $emailError->getMessage());
+                // Ne pas bloquer la confirmation de réservation si l'email échoue
+            }
             
             // Retourner une réponse de succès
             return response()->json([
@@ -143,6 +185,7 @@ class ReservationController extends Controller
             ], 500);
         }
     }
+    
 
     public function showReceipt($code)
     {
