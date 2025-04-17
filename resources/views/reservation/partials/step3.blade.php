@@ -5,6 +5,24 @@
             <i class="bi bi-arrow-left"></i> Retour
         </button>
     </div>
+    
+    <!-- Alerte de limite de réservation -->
+    @if(isset($userReservationsCount) && $userReservationsCount > 0)
+    <div class="alert alert-info mb-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle me-2 fs-4"></i>
+            <div>
+                <p class="mb-0">Vous avez déjà réservé <strong>{{ $userReservationsCount }}</strong> agneau(x).</p>
+                @if($remainingReservations > 0)
+                <p class="mb-0">Vous pouvez encore réserver <strong>{{ $remainingReservations }}</strong> agneau(x) sur le maximum de 4 autorisés.</p>
+                @else
+                <p class="mb-0 text-danger">Vous avez atteint la limite de 4 agneaux réservés.</p>
+                @endif
+            </div>
+        </div>
+    </div>
+    @endif
+    
     <div class="card mb-4">
         <div class="card-body">
             <div class="row g-3">
@@ -12,12 +30,10 @@
                     <label class="form-label">Quantité</label>
                     <div class="input-group">
                         <button class="btn btn-outline-secondary" type="button" onclick="decrementQuantity()">−</button>
-                        <input type="number" class="form-control text-center" id="quantity" value="1" min="1" max="4" readonly>
+                        <input type="number" class="form-control text-center" id="quantity" value="1" min="1" max="{{ $remainingReservations ?? 4 }}" readonly>
                         <button class="btn btn-outline-secondary" type="button" onclick="incrementQuantity()">+</button>
                     </div>
-                    <small class="form-text text-muted">Maximum 4 agneaux par réservation</small>
-                    <!-- Ajouter cette div d'alerte -->
-                    <div id="quantity-alert" style="display: none;"></div>
+                    <small class="form-text text-muted">Maximum {{ $remainingReservations ?? 4 }} agneau(x) restant(s) sur votre limite de 4</small>
                 </div>
 
                 <div class="col-md-6">
@@ -34,7 +50,7 @@
                 </div>
 
                 <div class="col-12 mt-4">
-                    <button class="btn btn-primary w-100" onclick="goToStep(4)">Continuer vers le paiement</button>
+                    <button class="btn btn-primary w-100" onclick="goToStep(4)" {{ $remainingReservations <= 0 ? 'disabled' : '' }}>Continuer vers le paiement</button>
                 </div>
             </div>
         </div>

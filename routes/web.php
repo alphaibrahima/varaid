@@ -77,6 +77,11 @@ Route::middleware(['auth', 'web', 'verified.affiliation'])->group(function () {
     Route::get('/get-slots/{date}', [ReservationController::class, 'getSlots'])->name('get.slots');
 });
 
+// Route pour vérifier la limite de réservation
+Route::get('/check-reservation-limit', [ReservationController::class, 'checkReservationLimit'])
+    ->middleware(['auth'])
+    ->name('reservation.check-limit');
+
 // Route temporaire pour tester les clés Stripe
 Route::get('/test-stripe-keys', function() {
     return [

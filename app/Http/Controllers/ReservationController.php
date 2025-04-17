@@ -20,14 +20,27 @@ class ReservationController extends Controller
             ->groupBy('date')
             ->orderBy('date', 'asc')
             ->get();
-
+    
         $user = Auth::user();
         $userAssociation = $user->association ? $user->association->name : 'N/A';
         
         // Vérifier si l'utilisateur a vérifié son affiliation
         $affiliationVerified = $user->role !== 'buyer' || $user->hasVerifiedAffiliation();
-
-        return view('reservation.index', compact('slotCounts', 'userAssociation', 'user', 'affiliationVerified'));
+        
+        // Obtenir le nombre d'agneaux déjà réservés par l'utilisateur
+        $userReservationsCount = $this->getUserReservationsCount();
+        
+        // Calculer le nombre d'agneaux restants que l'utilisateur peut réserver
+        $remainingReservations = max(0, 4 - $userReservationsCount);
+    
+        return view('reservation.index', compact(
+            'slotCounts', 
+            'userAssociation', 
+            'user', 
+            'affiliationVerified',
+            'userReservationsCount',
+            'remainingReservations'
+        ));
     }
 
     public function getSlots($date)
@@ -69,11 +82,8 @@ class ReservationController extends Controller
     public function confirmReservation(Request $request)
     {
         try {
-            // Récupérer les données JSON brutes
-            $rawData = json_decode($request->getContent(), true);
-            \Log::debug('Données JSON brutes:', $rawData);
-            
-            // Vérifier l'authentification
+            \Log::info('Reservation request received:', $request->all());
+    
             $user = Auth::user();
             if (!$user) {
                 return response()->json([
@@ -81,104 +91,65 @@ class ReservationController extends Controller
                     'message' => 'User not authenticated'
                 ], 401);
             }
+    
+            // Validate the request
+            $validated = $request->validate([
+                'reservationNumber' => 'required|string',
+                'cardholderName' => 'required|string',
+                'cardholderEmail' => 'required|email',
+                'slotId' => 'required|integer|exists:slots,id',
+                'quantity' => 'required|integer|min:1|max:4'
+            ]);
+    
+            // Vérifier la limite globale de 4 agneaux par utilisateur
+            $userReservationsCount = $this->getUserReservationsCount();
+            $newTotalCount = $userReservationsCount + $validated['quantity'];
             
-            // Vérifier si l'affiliation est confirmée pour les acheteurs
-            if ($user->role === 'buyer' && !$user->hasVerifiedAffiliation()) {
+            if ($newTotalCount > 4) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Votre affiliation n\'a pas été vérifiée. Veuillez entrer votre code d\'affiliation.',
-                    'requireAffiliation' => true
-                ], 403);
-            }
-            
-            // Créer manuellement un tableau avec la bonne structure
-            $data = [
-                'slot_id' => $rawData['slot_id'] ?? $rawData['slotId'] ?? null,
-                'quantity' => $rawData['quantity'] ?? null,
-                'reservation_number' => $rawData['reservation_number'] ?? $rawData['reservationNumber'] ?? null,
-                'payment_intent_id' => $rawData['payment_intent_id'] ?? $rawData['paymentIntentId'] ?? null,
-                'skip_selection' => $rawData['skip_selection'] ?? $rawData['skipSelection'] ?? false,
-                'owners' => $rawData['owners'] ?? [],
-                'cardholder_name' => $rawData['cardholder_name'] ?? $rawData['cardholderName'] ?? null,
-                'cardholder_email' => $rawData['cardholder_email'] ?? $rawData['cardholderEmail'] ?? null
-            ];
-            
-            // Validation des données essentielles
-            if (!$data['slot_id'] || !$data['quantity'] || !$data['payment_intent_id']) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Données de réservation incomplètes'
+                    'message' => 'Vous ne pouvez pas réserver plus de 4 agneaux au total. Vous avez déjà réservé ' . $userReservationsCount . ' agneau(x).',
+                    'limitReached' => true,
+                    'currentCount' => $userReservationsCount
                 ], 422);
             }
+    
+            // Vérifier si le créneau a assez de capacité
+            $slot = Slot::findOrFail($validated['slotId']);
+            $currentReservations = Reservation::where('slot_id', $slot->id)->sum('quantity');
             
-            // Vérifier si le créneau existe
-            $slot = Slot::find($data['slot_id']);
-            if (!$slot) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Créneau non trouvé'
-                ], 404);
-            }
-            
-            // Vérifier les places disponibles
-            $reservedCount = Reservation::where('slot_id', $data['slot_id'])
-                ->where('status', '!=', 'canceled')
-                ->sum('quantity');
-                
-            if (($reservedCount + $data['quantity']) > $slot->max_reservations) {
+            if (($currentReservations + $validated['quantity']) > $slot->max_reservations) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Plus assez de places disponibles pour ce créneau'
                 ], 422);
             }
-            
-            // Créer la réservation
+    
             $reservation = Reservation::create([
                 'user_id' => $user->id,
-                'slot_id' => $data['slot_id'],
-                'association_id' => $user->association_id ?? null,
-                'size' => 'grand', // Valeur par défaut
-                'quantity' => $data['quantity'],
-                'code' => $data['reservation_number'],
-                'status' => 'confirmed',
+                'slot_id' => $validated['slotId'],
+                'association_id' => $user->association ? $user->association->id : null,
+                'size' => 'grand',
+                'quantity' => $validated['quantity'],
+                'code' => $validated['reservationNumber'],
+                'status' => 'pending',
                 'date' => now(),
-                'skip_selection' => $data['skip_selection'],
-                'owners_data' => json_encode($data['owners']),
-                'payment_intent_id' => $data['payment_intent_id']
             ]);
-            
-            // Charger les relations nécessaires pour la notification
-            $reservation->load(['user', 'slot', 'association']);
-            
-            // Envoi de l'email de confirmation avec le reçu en PDF
-            try {
-                // Envoi de l'email de confirmation avec le reçu en PDF
-                $user->notify(new \App\Notifications\ReservationConfirmation($reservation));
-            
-                // Envoyer également un email à l'adresse fournie dans le formulaire si différente
-                if ($data['cardholder_email'] && $data['cardholder_email'] !== $user->email) {
-                    \Illuminate\Support\Facades\Notification::route('mail', [
-                        $data['cardholder_email'] => $data['cardholder_name'] ?? 'Client'
-                    ])->notify(new \App\Notifications\ReservationConfirmation($reservation));
-                }
-            } catch (\Exception $emailError) {
-                \Log::warning('Erreur lors de l\'envoi d\'email: ' . $emailError->getMessage());
-                // Ne pas bloquer la confirmation de réservation si l'email échoue
-            }
-            
-            // Retourner une réponse de succès
+    
+            // Return success response with redirect URL
             return response()->json([
                 'status' => 'success',
-                'message' => 'Réservation confirmée avec succès',
+                'message' => 'Réservation créée avec succès',
                 'data' => $reservation,
                 'redirectUrl' => route('reservation.receipt', ['code' => $reservation->code])
             ]);
+    
         } catch (\Exception $e) {
-            \Log::error('Erreur de confirmation:', [
+            \Log::error('Reservation error:', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+    
             return response()->json([
                 'status' => 'error',
                 'message' => $e->getMessage()
@@ -308,4 +279,32 @@ class ReservationController extends Controller
             'needsVerification' => false
         ]);
     }
+
+    /**
+     * Récupère le nombre total d'agneaux déjà réservés par l'utilisateur
+     */
+    private function getUserReservationsCount()
+    {
+        $userId = Auth::id();
+        return Reservation::where('user_id', $userId)
+            ->where('status', '!=', 'canceled')  // Ne pas compter les réservations annulées
+            ->sum('quantity');
+    }
+
+    /**
+     * Vérifie la limite de réservation pour l'utilisateur
+     */
+    public function checkReservationLimit()
+    {
+        $userReservationsCount = $this->getUserReservationsCount();
+        $remainingReservations = max(0, 4 - $userReservationsCount);
+        
+        return response()->json([
+            'currentCount' => $userReservationsCount,
+            'remainingCount' => $remainingReservations,
+            'limitReached' => $userReservationsCount >= 4
+        ]);
+    }
+
+
 }

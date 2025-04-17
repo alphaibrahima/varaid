@@ -19,6 +19,8 @@ let selectedTime = '';
 let selectedSize = 'grand';
 let selectedQuantity = 1;
 let skipSelection = false;
+let userReservationsCount = 0;
+let remainingReservations = 4;
 
 // Fonction pour afficher l'alerte pour l'étape courante
 function showAlertForStep(step) {
@@ -200,34 +202,14 @@ function updateDeposit() {
     depositElement.textContent = `${deposit},00 €`;
 }
 
-// Incrémentation de la quantité avec vérification de disponibilité
+// Modifions la fonction d'incrémentation pour tenir compte de la limite
 function incrementQuantity() {
     const quantityInput = document.getElementById('quantity');
-    const currentQuantity = parseInt(quantityInput.value);
-    const maxQuantity = parseInt(quantityInput.max);
-    const placesRestantes = parseInt(localStorage.getItem('placesRestantes') || '0');
-    const quantityAlert = document.getElementById('quantityAlert');
+    const currentValue = parseInt(quantityInput.value);
+    const maxValue = Math.min(parseInt(quantityInput.max), remainingReservations);
     
-    // Vérifier si on ne dépasse pas le maximum autorisé (5) et les places disponibles
-    if (currentQuantity < maxQuantity) {
-        const newQuantity = currentQuantity + 1;
-        
-        // Vérifier si la nouvelle quantité dépasse les places disponibles
-        if (newQuantity > placesRestantes) {
-            // Afficher l'alerte
-            if (quantityAlert) {
-                quantityAlert.style.display = 'block';
-                document.getElementById('quantityAlertMessage').textContent = 
-                    `Attention: Il ne reste que ${placesRestantes} place(s) disponible(s) pour ce créneau.`;
-            }
-            return; // Ne pas incrémenter
-        }
-        
-        // Si l'alerte est visible, la masquer
-        if (quantityAlert) quantityAlert.style.display = 'none';
-        
-        // Mettre à jour la quantité
-        selectedQuantity = newQuantity;
+    if (currentValue < maxValue) {
+        selectedQuantity = currentValue + 1;
         quantityInput.value = selectedQuantity;
         
         // Mettre à jour le récapitulatif
@@ -239,6 +221,9 @@ function incrementQuantity() {
         }
         
         updateDeposit(); // Mettre à jour l'acompte
+        generateOwnerFields(); // Mettre à jour les champs propriétaires
+    } else if (currentValue >= maxValue) {
+        showLimitReachedAlert();
     }
 }
 
@@ -282,6 +267,110 @@ function toggleSkipSelection() {
     
     console.log("Option 'Ne pas venir choisir':", skipSelection);
 }
+
+// Fonction pour vérifier la limite de réservation de l'utilisateur
+function checkReservationLimit() {
+    fetch('/check-reservation-limit')
+        .then(response => response.json())
+        .then(data => {
+            userReservationsCount = data.currentCount;
+            remainingReservations = data.remainingCount;
+            
+            // Mettre à jour l'interface utilisateur
+            updateReservationUI();
+            
+            // Afficher un message si la limite est atteinte
+            if (data.limitReached) {
+                showLimitReachedAlert();
+            }
+        })
+        .catch(error => {
+            console.error('Erreur lors de la vérification de la limite de réservation:', error);
+        });
+}
+
+// Fonction pour mettre à jour l'interface utilisateur en fonction de la limite
+function updateReservationUI() {
+    const quantityInput = document.getElementById('quantity');
+    if (quantityInput) {
+        // Limiter la quantité maximale au nombre restant
+        quantityInput.max = remainingReservations;
+        quantityInput.value = Math.min(parseInt(quantityInput.value), remainingReservations);
+        
+        // Si aucune réservation n'est possible, désactiver les boutons
+        if (remainingReservations <= 0) {
+            document.querySelectorAll('.creneaux-jour').forEach(btn => {
+                btn.classList.add('disabled');
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showLimitReachedAlert();
+                };
+            });
+        }
+    }
+}
+
+// Fonction pour afficher une alerte stylisée lorsque la limite est atteinte
+function showLimitReachedAlert() {
+    // Créer l'élément d'alerte s'il n'existe pas déjà
+    let alertElement = document.getElementById('limit-reached-alert');
+    if (!alertElement) {
+        alertElement = document.createElement('div');
+        alertElement.id = 'limit-reached-alert';
+        alertElement.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3 shadow';
+        alertElement.style.zIndex = '9999';
+        alertElement.style.animationName = 'slideDown';
+        alertElement.style.animationDuration = '0.3s';
+        
+        // Ajouter les styles d'animation au document s'ils n'existent pas
+        if (!document.getElementById('limit-alert-styles')) {
+            const styleElement = document.createElement('style');
+            styleElement.id = 'limit-alert-styles';
+            styleElement.textContent = `
+                @keyframes slideDown {
+                    from { transform: translate(-50%, -100%); }
+                    to { transform: translate(-50%, 0); }
+                }
+                
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; }
+                }
+            `;
+            document.head.appendChild(styleElement);
+        }
+        
+        document.body.appendChild(alertElement);
+    }
+    
+    // Mettre à jour le contenu de l'alerte
+    alertElement.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill text-danger me-2 fs-4"></i>
+            <div>
+                <strong>Limite atteinte!</strong> Vous avez déjà réservé ${userReservationsCount} agneau(x) sur le maximum de 4 autorisés.
+            </div>
+            <button type="button" class="btn-close ms-auto" onclick="document.getElementById('limit-reached-alert').remove();"></button>
+        </div>
+    `;
+    
+    // Faire disparaître l'alerte après 5 secondes
+    setTimeout(() => {
+        alertElement.style.animationName = 'fadeOut';
+        alertElement.style.animationDuration = '0.5s';
+        setTimeout(() => {
+            if (alertElement.parentNode) {
+                alertElement.parentNode.removeChild(alertElement);
+            }
+        }, 500);
+    }, 5000);
+}
+
+
+
 
 // Sélection de la taille
 function selectSize(size) {
