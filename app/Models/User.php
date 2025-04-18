@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Builder;
 use App\Notifications\ResetPassword;
+use App\Models\Reservation;
 
 class User extends Authenticatable
 {
@@ -114,6 +115,14 @@ class User extends Authenticatable
             ->where('role', 'buyer');
     }
 
+
+    /**
+     * Relation avec les réservations de l'utilisateur
+     */
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class);
+    }
     /**
      * Scope a query to only include active users.
      */

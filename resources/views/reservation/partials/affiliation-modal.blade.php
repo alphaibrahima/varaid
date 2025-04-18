@@ -26,9 +26,9 @@
                         <button type="submit" class="btn btn-primary" id="verify-code-btn">
                             Vérifier le code
                         </button>
-                        <button type="button" class="btn btn-outline-secondary" id="resend-code-btn">
+                        {{-- <button type="button" class="btn btn-outline-secondary" id="resend-code-btn">
                             Recevoir un nouveau code
-                        </button>
+                        </button> --}}
                     </div>
                 </form>
             </div>

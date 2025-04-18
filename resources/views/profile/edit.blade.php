@@ -3,6 +3,8 @@
     $layout = 'layouts.app';
     if (Auth::user()->role === 'association') {
         $layout = 'layouts.association';
+    } elseif (Auth::user()->role === 'buyer') {
+        $layout = 'layouts.buyer';
     }
     // Pour les autres rôles (admin), vous pourriez ajouter d'autres conditions ici
 @endphp

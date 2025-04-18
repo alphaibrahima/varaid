@@ -13,118 +13,229 @@
     <link rel="stylesheet" href="{{asset('css/template/style.css')}}">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container">
-            <a class="navbar-brand" href="#"> Varaid </a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto">
-                    @auth
-                        {{-- <li class="nav-item">
-                            <a class="nav-link" href="{{ route('dashboard') }}">Dashboard</a>
-                        </li> --}}
-                        <li class="nav-item">
-                            <!-- Formulaire de déconnexion -->
-                            <form method="POST" action="{{ route('logout') }}" class="d-inline">
+    <div class="d-flex flex-column flex-md-row">
+        <!-- Menu latéral -->
+        <div class="bg-dark text-white" style="width: 280px; min-height: 100vh;">
+            <div class="d-flex flex-column h-100 py-3">
+                <div class="px-3 mb-3 d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill fs-4 me-2"></i>
+                    <span class="fs-4">Réservation Varaid</span>
+                </div>
+                <hr class="text-white-50">
+                <ul class="nav nav-pills flex-column mb-auto px-3">
+                    <li class="nav-item">
+                        <a href="{{ route('dashboard') }}" class="nav-link text-white">
+                            <i class="bi bi-speedometer2 me-2"></i>
+                            Tableau de bord
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('reservation.index') }}" class="nav-link active">
+                            <i class="bi bi-calendar-plus me-2"></i>
+                            Nouvelle réservation
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard') }}?tab=mes-reservations" class="nav-link text-white">
+                            <i class="bi bi-list-check me-2"></i>
+                            Mes réservations
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('tutorials') }}" class="nav-link text-white">
+                            <i class="bi bi-play-circle me-2"></i>
+                            Tutoriels
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('profile.edit') }}" class="nav-link text-white">
+                            <i class="bi bi-person-circle me-2"></i>
+                            Mon profil
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Statut d'affiliation -->
+                <div class="px-3 py-2 mt-auto">
+                    <div class="mb-2">
+                        <small class="text-white-50">Statut d'affiliation</small>
+                        @if(Auth::user()->hasVerifiedAffiliation())
+                            <div class="d-flex align-items-center bg-success bg-opacity-25 text-success rounded p-1 mt-1">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                <small>Affiliation vérifiée</small>
+                            </div>
+                        @else
+                            <div class="d-flex align-items-center bg-danger bg-opacity-25 text-danger rounded p-1 mt-1">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <small>Non vérifiée</small>
+                            </div>
+                        @endif
+                    </div>
+                    
+                    <!-- Profil utilisateur -->
+                    <div class="d-flex align-items-center mt-3">
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=random" class="rounded-circle me-2" width="32" height="32">
+                        <div>
+                            <div class="fw-bold">{{ Auth::user()->name }}</div>
+                            <form method="POST" action="{{ route('logout') }}" class="m-0 p-0">
                                 @csrf
-                                <button type="submit" class="btn btn-link nav-link" style="display: inline; padding: 0;">
-                                    Déconnexion
+                                <button type="submit" class="btn btn-link text-white-50 p-0 text-decoration-none btn-sm">
+                                    <i class="bi bi-box-arrow-right me-1"></i>Déconnexion
                                 </button>
                             </form>
-                        </li>
-                    @endauth
-
-                    @guest
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('login') }}">Connexion</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('register') }}">Inscription</a>
-                        </li>
-                    @endguest
-                </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </nav>
-
-
-    <div class="container py-5">
-        <div class="page-container">
-            <h2 class="text-center mb-5">
-                Réservez votre agneau pour l'Aïd Al Adha 2025
-            </h2>
-            
-            <!-- Indicateur de progression -->
-            <div class="step-indicator mb-5">
-                <div class="step-progress" id="step-progress"></div>
-                <div class="step-dots">
-                    <div class="step-dot active" data-step="1"></div>
-                    <div class="step-dot" data-step="2"></div>
-                    <div class="step-dot" data-step="3"></div>
-                    <div class="step-dot" data-step="4"></div>
+        
+        <!-- Contenu principal -->
+        <div class="flex-grow-1 bg-light" style="min-height: 100vh;">
+            <!-- Barre responsive pour mobile uniquement -->
+            <div class="d-md-none bg-dark text-white p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fs-4">Réservation</span>
+                    <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuMobile">
+                        <i class="bi bi-list"></i>
+                    </button>
                 </div>
             </div>
+            
+            <div class="container py-5">
+                <div class="page-container">
+                    <h2 class="text-center mb-5">
+                        Réservez votre agneau pour l'Aïd Al Adha 2025
+                    </h2>
+                    
+                    <!-- Indicateur de progression -->
+                    <div class="step-indicator mb-5">
+                        <div class="step-progress" id="step-progress"></div>
+                        <div class="step-dots">
+                            <div class="step-dot active" data-step="1"></div>
+                            <div class="step-dot" data-step="2"></div>
+                            <div class="step-dot" data-step="3"></div>
+                            <div class="step-dot" data-step="4"></div>
+                        </div>
+                    </div>
 
-            <!-- Alerte de limite de réservation -->
-            @if(isset($userReservationsCount) && $userReservationsCount >= 4)
-            <div class="alert alert-warning mb-4" id="reservation-limit-alert">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-exclamation-triangle-fill me-2 fs-4"></i>
-                    <div>
-                        <strong>Limite atteinte!</strong> Vous avez déjà réservé le maximum de 4 agneaux autorisés.
+
+                    <!-- Alertes spécifiques à chaque étape -->
+                    <div id="alert-step-1" class="alert alert-info mb-4 step-alert">
+                        <i class="bi bi-info-circle"></i> 
+                        En confirmant votre choix, vous recevrez une notification par sms et par mail détaillant vos rendez-vous.
+                    </div>
+                    
+                    <div id="alert-step-2" class="alert alert-info mb-4 step-alert" style="display: none;">
+                        <i class="bi bi-info-circle"></i>
+                        Votre horaire d'abattage sera identique au créneau choisi. 
+                    </div>
+                    
+                    <div id="alert-step-3" class="alert alert-info mb-4 step-alert" style="display: none;">
+                        <i class="bi bi-info-circle"></i>
+                        Un acompte de 100€ par réservataire est obligatoire. Acompte non remboursable.
+                    </div>
+                    
+                    <div id="alert-step-4" class="alert alert-info mb-4 step-alert" style="display: none;">
+                        <i class="bi bi-info-circle"></i>
+                        En confirmant cette réservation, vous acceptez que l'heure choisie soit la même pour le jour de votre choix et pour l'abattement de l'agneau. Une notification vous sera envoyée par mail et par SMS avec les détails.
+                    </div>
+                    
+                    <!-- Étape 1: Sélection du jour -->
+                    @include('reservation.partials.step1')
+                    
+                    <!-- Étape 2: Sélection de l'heure -->
+                    @include('reservation.partials.step2')
+                    
+                    <!-- Étape 3: Configuration de la commande -->
+                    @include('reservation.partials.step3')
+                    
+                    <!-- Étape 4: Paiement et confirmation -->
+                    @include('reservation.partials.step4')
+                    <!-- fin etape 4 -->
+                    
+                    <!-- Modal de confirmation -->
+                    @include('reservation.partials.modal')
+                    {{-- modal code --}}
+                    @include('reservation.partials.affiliation-modal')
+
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Menu mobile (offcanvas) -->
+    <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="menuMobile">
+        <div class="offcanvas-header bg-dark text-white">
+            <h5 class="offcanvas-title">Menu</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body bg-dark text-white p-0">
+            <div class="d-flex flex-column h-100 py-3">
+                <ul class="nav nav-pills flex-column mb-auto px-3">
+                    <li class="nav-item">
+                        <a href="{{ route('dashboard') }}" class="nav-link text-white">
+                            <i class="bi bi-speedometer2 me-2"></i>
+                            Tableau de bord
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('reservation.index') }}" class="nav-link active">
+                            <i class="bi bi-calendar-plus me-2"></i>
+                            Nouvelle réservation
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard') }}?tab=mes-reservations" class="nav-link text-white">
+                            <i class="bi bi-list-check me-2"></i>
+                            Mes réservations
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('tutorials') }}" class="nav-link text-white">
+                            <i class="bi bi-play-circle me-2"></i>
+                            Tutoriels
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('profile.edit') }}" class="nav-link text-white">
+                            <i class="bi bi-person-circle me-2"></i>
+                            Mon profil
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Statut d'affiliation -->
+                <div class="px-3 py-2 mt-auto">
+                    <div class="mb-2">
+                        <small class="text-white-50">Statut d'affiliation</small>
+                        @if(Auth::user()->hasVerifiedAffiliation())
+                            <div class="d-flex align-items-center bg-success bg-opacity-25 text-success rounded p-1 mt-1">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                <small>Affiliation vérifiée</small>
+                            </div>
+                        @else
+                            <div class="d-flex align-items-center bg-danger bg-opacity-25 text-danger rounded p-1 mt-1">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <small>Non vérifiée</small>
+                            </div>
+                        @endif
+                    </div>
+                    
+                    <!-- Profil utilisateur -->
+                    <div class="d-flex align-items-center mt-3">
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=random" class="rounded-circle me-2" width="32" height="32">
+                        <div>
+                            <div class="fw-bold">{{ Auth::user()->name }}</div>
+                            <form method="POST" action="{{ route('logout') }}" class="m-0 p-0">
+                                @csrf
+                                <button type="submit" class="btn btn-link text-white-50 p-0 text-decoration-none btn-sm">
+                                    <i class="bi bi-box-arrow-right me-1"></i>Déconnexion
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
-            @elseif(isset($userReservationsCount) && $userReservationsCount > 0)
-            <div class="alert alert-info mb-4" id="reservation-info-alert">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-info-circle me-2 fs-4"></i>
-                    <div>
-                        <p class="mb-0">Vous avez déjà réservé <strong>{{ $userReservationsCount }}</strong> agneau(x).</p>
-                        <p class="mb-0">Vous pouvez encore réserver <strong>{{ $remainingReservations }}</strong> agneau(x) sur le maximum de 4 autorisés.</p>
-                    </div>
-                </div>
-            </div>
-            @endif
-
-            <!-- Alertes spécifiques à chaque étape -->
-            <div id="alert-step-1" class="alert alert-info mb-4 step-alert">
-                <i class="bi bi-info-circle"></i> 
-                En confirmant votre choix, vous recevrez une notification par sms et par mail détaillant vos rendez-vous.
-            </div>
-            
-            <div id="alert-step-2" class="alert alert-info mb-4 step-alert" style="display: none;">
-                <i class="bi bi-info-circle"></i>
-                Votre horaire d'abattage sera identique au créneau choisi. 
-            </div>
-            
-            <div id="alert-step-3" class="alert alert-info mb-4 step-alert" style="display: none;">
-                <i class="bi bi-info-circle"></i>
-                Un acompte de 100€ par réservataire est obligatoire. Acompte non remboursable.
-            </div>
-            
-            <div id="alert-step-4" class="alert alert-info mb-4 step-alert" style="display: none;">
-                <i class="bi bi-info-circle"></i>
-                En confirmant cette réservation, vous acceptez que l'heure choisie soit la même pour le jour de votre choix et pour l'abattement de l'agneau. Une notification vous sera envoyée par mail et par SMS avec les détails.
-            </div>
-            
-            <!-- Étape 1: Sélection du jour -->
-            @include('reservation.partials.step1')
-            
-            <!-- Étape 2: Sélection de l'heure -->
-            @include('reservation.partials.step2')
-            
-            <!-- Étape 3: Configuration de la commande -->
-            @include('reservation.partials.step3')
-            
-            <!-- Étape 4: Paiement et confirmation -->
-            @include('reservation.partials.step4')
-            <!-- fin etape 4 -->
-            
-            <!-- Modal de confirmation -->
-            @include('reservation.partials.modal')
-            {{-- modal code --}}
-            @include('reservation.partials.affiliation-modal')
-
         </div>
     </div>
 
@@ -137,6 +248,9 @@
         // Make CSRF token and user info globally available
         window.csrf_token = '{{ csrf_token() }}';
         window.userInfo = {
+            // name: '{{ $user->name }}',
+            // firstName: '{{ $user->firstname}}',
+            // Si vous avez les champs séparés de prénom et nom dans votre base de données, utilisez-les
             full_address: '{{ $user->full_address }}',
             firstName: '{{ $user->firstname}}',
             lastName: '{{ $user->name }}',
@@ -147,67 +261,8 @@
             publicKey: "{{ config('services.stripe.key') }}"
         };
 
-        // Variables globales pour la limitation des réservations
-        window.userReservationsCount = {{ $userReservationsCount ?? 0 }};
-        window.remainingReservations = {{ $remainingReservations ?? 4 }};
-        window.maxReservations = 4;
 
-        // Fonction pour afficher une alerte stylisée lorsque la limite est atteinte
-        function showLimitReachedAlert() {
-            // Créer l'élément d'alerte s'il n'existe pas déjà
-            let alertElement = document.getElementById('limit-reached-alert');
-            if (!alertElement) {
-                alertElement = document.createElement('div');
-                alertElement.id = 'limit-reached-alert';
-                alertElement.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3 shadow';
-                alertElement.style.zIndex = '9999';
-                alertElement.style.animationName = 'slideDown';
-                alertElement.style.animationDuration = '0.3s';
-                
-                // Ajouter les styles d'animation au document s'ils n'existent pas
-                if (!document.getElementById('limit-alert-styles')) {
-                    const styleElement = document.createElement('style');
-                    styleElement.id = 'limit-alert-styles';
-                    styleElement.textContent = `
-                        @keyframes slideDown {
-                            from { transform: translate(-50%, -100%); }
-                            to { transform: translate(-50%, 0); }
-                        }
-                        
-                        @keyframes fadeOut {
-                            from { opacity: 1; }
-                            to { opacity: 0; }
-                        }
-                    `;
-                    document.head.appendChild(styleElement);
-                }
-                
-                document.body.appendChild(alertElement);
-            }
-            
-            // Mettre à jour le contenu de l'alerte
-            alertElement.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-exclamation-triangle-fill text-danger me-2 fs-4"></i>
-                    <div>
-                        <strong>Limite atteinte!</strong> Vous avez déjà réservé ${window.userReservationsCount} agneau(x) sur le maximum de 4 autorisés.
-                    </div>
-                    <button type="button" class="btn-close ms-auto" onclick="document.getElementById('limit-reached-alert').remove();"></button>
-                </div>
-            `;
-            
-            // Faire disparaître l'alerte après 5 secondes
-            setTimeout(() => {
-                alertElement.style.animationName = 'fadeOut';
-                alertElement.style.animationDuration = '0.5s';
-                setTimeout(() => {
-                    if (alertElement.parentNode) {
-                        alertElement.parentNode.removeChild(alertElement);
-                    }
-                }, 500);
-            }, 5000);
-        }
-
+        // script pour gérer l'affichage de la modal et la vérification du code
         document.addEventListener('DOMContentLoaded', function() {
             // Variables globales
             const affiliationVerified = {{ $affiliationVerified ? 'true' : 'false' }};
@@ -221,139 +276,93 @@
                 affiliationModal.show();
             }
             
-            // Désactiver les sélections si la limite est atteinte
-            if (window.userReservationsCount >= window.maxReservations) {
-                document.querySelectorAll('.creneaux-jour').forEach(card => {
-                    card.classList.add('disabled');
-                    card.style.opacity = '0.5';
-                    card.style.cursor = 'not-allowed';
-                    
-                    // Remplacer l'événement de clic
-                    const originalOnClick = card.getAttribute('onclick');
-                    card.setAttribute('data-original-onclick', originalOnClick);
-                    card.setAttribute('onclick', 'showLimitReachedAlert(); return false;');
-                });
+            // Gérer la soumission du formulaire
+            affiliationForm.addEventListener('submit', function(e) {
+                e.preventDefault();
                 
-                // Afficher un message à l'utilisateur
-                showLimitReachedAlert();
-            }
-            
-            // Mettre à jour le maximum autorisé dans l'input de quantité
-            const quantityInput = document.getElementById('quantity');
-            if (quantityInput) {
-                quantityInput.max = window.remainingReservations;
-                quantityInput.value = Math.min(parseInt(quantityInput.value) || 1, window.remainingReservations);
+                const code = document.getElementById('affiliation_code').value;
+                const verifyBtn = document.getElementById('verify-code-btn');
                 
-                if (window.remainingReservations <= 0) {
-                    quantityInput.disabled = true;
-                    
-                    // Désactiver les boutons de quantité
-                    const quantityBtns = quantityInput.parentElement.querySelectorAll('button');
-                    quantityBtns.forEach(btn => {
-                        btn.disabled = true;
-                        btn.style.opacity = '0.5';
-                    });
-                    
-                    // Désactiver le bouton de continuation
-                    const continueBtn = document.querySelector('.step#step-3 .btn-primary');
-                    if (continueBtn) {
-                        continueBtn.disabled = true;
-                        continueBtn.textContent = 'Limite de réservation atteinte';
-                    }
-                }
-            }
-            
-            // Gérer la soumission du formulaire d'affiliation
-            if (affiliationForm) {
-                affiliationForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    const code = document.getElementById('affiliation_code').value;
-                    const verifyBtn = document.getElementById('verify-code-btn');
-                    
-                    // Désactiver le bouton pendant la vérification
-                    verifyBtn.disabled = true;
-                    verifyBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Vérification...';
-                    
-                    // Envoyer la requête AJAX
-                    fetch('{{ route("affiliation.verify.ajax") }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({ affiliation_code: code })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Afficher un message de succès
-                            affiliationAlert.classList.remove('d-none', 'alert-danger');
-                            affiliationAlert.classList.add('alert-success');
-                            affiliationAlert.textContent = data.message;
-                            
-                            // Fermer la modal après 2 secondes
-                            setTimeout(() => {
-                                affiliationModal.hide();
-                                // Rafraîchir la page pour mettre à jour l'interface
-                                window.location.reload();
-                            }, 2000);
-                        } else {
-                            throw new Error(data.message);
-                        }
-                    })
-                    .catch(error => {
-                        // Afficher un message d'erreur
-                        affiliationAlert.classList.remove('d-none', 'alert-success');
-                        affiliationAlert.classList.add('alert-danger');
-                        affiliationAlert.textContent = error.message || 'Une erreur est survenue. Veuillez réessayer.';
+                // Désactiver le bouton pendant la vérification
+                verifyBtn.disabled = true;
+                verifyBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Vérification...';
+                
+                // Envoyer la requête AJAX
+                fetch('{{ route("affiliation.verify.ajax") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ affiliation_code: code })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Afficher un message de succès
+                        affiliationAlert.classList.remove('d-none', 'alert-danger');
+                        affiliationAlert.classList.add('alert-success');
+                        affiliationAlert.textContent = data.message;
                         
-                        // Réactiver le bouton
-                        verifyBtn.disabled = false;
-                        verifyBtn.textContent = 'Vérifier le code';
-                    });
+                        // Fermer la modal après 2 secondes
+                        setTimeout(() => {
+                            affiliationModal.hide();
+                            // Rafraîchir la page pour mettre à jour l'interface
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    // Afficher un message d'erreur
+                    affiliationAlert.classList.remove('d-none', 'alert-success');
+                    affiliationAlert.classList.add('alert-danger');
+                    affiliationAlert.textContent = error.message || 'Une erreur est survenue. Veuillez réessayer.';
+                    
+                    // Réactiver le bouton
+                    verifyBtn.disabled = false;
+                    verifyBtn.textContent = 'Vérifier le code';
                 });
-            }
+            });
             
             // Gérer la demande d'un nouveau code
-            if (resendCodeBtn) {
-                resendCodeBtn.addEventListener('click', function() {
-                    this.disabled = true;
-                    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Envoi en cours...';
-                    
-                    fetch('{{ route("affiliation.resend.ajax") }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Afficher un message de succès
-                            affiliationAlert.classList.remove('d-none', 'alert-danger');
-                            affiliationAlert.classList.add('alert-success');
-                            affiliationAlert.textContent = data.message;
-                        } else {
-                            throw new Error(data.message);
-                        }
-                    })
-                    .catch(error => {
-                        // Afficher un message d'erreur
-                        affiliationAlert.classList.remove('d-none', 'alert-success');
-                        affiliationAlert.classList.add('alert-danger');
-                        affiliationAlert.textContent = error.message || 'Une erreur est survenue. Veuillez réessayer.';
-                    })
-                    .finally(() => {
-                        // Réactiver le bouton
-                        this.disabled = false;
-                        this.textContent = 'Recevoir un nouveau code';
-                    });
+            resendCodeBtn.addEventListener('click', function() {
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Envoi en cours...';
+                
+                fetch('{{ route("affiliation.resend.ajax") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Afficher un message de succès
+                        affiliationAlert.classList.remove('d-none', 'alert-danger');
+                        affiliationAlert.classList.add('alert-success');
+                        affiliationAlert.textContent = data.message;
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    // Afficher un message d'erreur
+                    affiliationAlert.classList.remove('d-none', 'alert-success');
+                    affiliationAlert.classList.add('alert-danger');
+                    affiliationAlert.textContent = error.message || 'Une erreur est survenue. Veuillez réessayer.';
+                })
+                .finally(() => {
+                    // Réactiver le bouton
+                    this.disabled = false;
+                    this.textContent = 'Recevoir un nouveau code';
                 });
-            }
+            });
         });
     </script>
 </body>

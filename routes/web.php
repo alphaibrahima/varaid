@@ -7,7 +7,12 @@ use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AssociationDashboardController;
 use App\Http\Controllers\AffiliationVerificationController;
+use App\Http\Controllers\TutorialController;
 use Illuminate\Support\Facades\Auth;
+
+
+use App\Http\Controllers\DashboardController;
+
 
 // Routes d'authentification
 Route::get('/register', [RegisteredUserController::class, 'create'])
@@ -57,7 +62,15 @@ Route::middleware(['auth', 'web'])->group(function () {
     Route::get('/dashboard', [ReservationController::class, 'index'])
         ->middleware('verified')
         ->name('dashboard');
+
+    Route::get('/tutorials', [TutorialController::class, 'index'])->name('tutorials');
+
 });
+
+
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware('verified')
+    ->name('dashboard');
 
 // Routes pour le dashboard des associations
 Route::middleware(['auth', 'web'])->prefix('association')->name('association.')->group(function () {
