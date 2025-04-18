@@ -1,114 +1,224 @@
-@extends('layouts.app')
+@php
+    // Déterminer le layout à utiliser en fonction du rôle
+    $layout = 'layouts.app';
+    if (Auth::user()->role === 'association') {
+        $layout = 'layouts.association';
+    }
+    // Pour les autres rôles (admin), vous pourriez ajouter d'autres conditions ici
+@endphp
 
-<section class="max-w-xl mx-auto">
-    <header class="text-center mb-6">
-        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-            {{ __('Informations du profil') }}
-        </h2>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {{ __("Mettez à jour vos informations personnelles et votre adresse e-mail.") }}
-        </p>
-    </header>
+@extends($layout)
 
-    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
-        @csrf
-        @method('patch')
+@section('header', 'Modifier votre profil')
 
-        <!-- Nom -->
-        <div class="mb-4">
-            <label for="name" class="block font-medium text-sm text-gray-700">{{ __('Nom') }}</label>
-            <input id="name" name="name" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" value="{{ old('name', $user->name) }}" required autofocus>
-            @error('name')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
+@section('content')
+<div class="space-y-6">
+    <!-- Section du profil -->
+    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {{ __('Informations du profil') }}
+            </h3>
         </div>
 
-        <!-- Prénom -->
-        <div class="mb-4">
-            <label for="firstname" class="block font-medium text-sm text-gray-700">{{ __('Prénom') }}</label>
-            <input id="firstname" name="firstname" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" value="{{ old('firstname', $user->firstname) }}" required>
-            @error('firstname')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
+        <div class="p-6">
+            <form method="POST" action="{{ route('profile.update') }}" class="space-y-6">
+                @csrf
+                @method('patch')
+
+                <!-- Nom -->
+                <div>
+                    <x-input-label for="name" :value="__('Nom')" />
+                    <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus />
+                    <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                </div>
+
+                <!-- Prénom (si présent dans votre base) -->
+                @if(isset($user->firstname))
+                <div class="mt-4">
+                    <x-input-label for="firstname" :value="__('Prénom')" />
+                    <x-text-input id="firstname" name="firstname" type="text" class="mt-1 block w-full" :value="old('firstname', $user->firstname)" required />
+                    <x-input-error :messages="$errors->get('firstname')" class="mt-2" />
+                </div>
+                @endif
+
+                <!-- Email -->
+                <div class="mt-4">
+                    <x-input-label for="email" :value="__('Email')" />
+                    <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required />
+                    <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                </div>
+
+                <!-- Téléphone -->
+                <div class="mt-4">
+                    <x-input-label for="phone" :value="__('Téléphone')" />
+                    <x-text-input id="phone" name="phone" type="tel" class="mt-1 block w-full" :value="old('phone', $user->phone)" required />
+                    <x-input-error :messages="$errors->get('phone')" class="mt-2" />
+                </div>
+
+                <!-- Adresse -->
+                <div class="mt-4">
+                    <x-input-label for="full_address" :value="__('Adresse complète')" />
+                    <x-textarea id="full_address" name="full_address" class="mt-1 block w-full" rows="3" required>{{ old('full_address', $user->full_address) }}</x-textarea>
+                    <x-input-error :messages="$errors->get('full_address')" class="mt-2" />
+                </div>
+
+                <!-- Bouton de soumission -->
+                <div class="flex items-center justify-end mt-4">
+                    <x-primary-button>
+                        {{ __('Enregistrer') }}
+                    </x-primary-button>
+
+                    @if (session('status') === 'profile-updated')
+                        <p class="ml-3 text-sm text-green-600 dark:text-green-400">
+                            {{ __('Profil mis à jour.') }}
+                        </p>
+                    @endif
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Section du mot de passe -->
+    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {{ __('Mettre à jour le mot de passe') }}
+            </h3>
         </div>
 
-        <!-- Email -->
-        <div class="mb-4">
-            <label for="email" class="block font-medium text-sm text-gray-700">{{ __('Email') }}</label>
-            <input id="email" name="email" type="email" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" value="{{ old('email', $user->email) }}" required>
-            @error('email')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
+        <div class="p-6">
+            <form method="post" action="{{ route('password.update') }}" class="space-y-6">
+                @csrf
+                @method('put')
+
+                <div>
+                    <x-input-label for="current_password" :value="__('Mot de passe actuel')" />
+                    <x-text-input id="current_password" name="current_password" type="password" class="mt-1 block w-full" autocomplete="current-password" />
+                    <x-input-error :messages="$errors->updatePassword->get('current_password')" class="mt-2" />
+                </div>
+
+                <div>
+                    <x-input-label for="password" :value="__('Nouveau mot de passe')" />
+                    <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" autocomplete="new-password" />
+                    <x-input-error :messages="$errors->updatePassword->get('password')" class="mt-2" />
+                </div>
+
+                <div>
+                    <x-input-label for="password_confirmation" :value="__('Confirmer le mot de passe')" />
+                    <x-text-input id="password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" autocomplete="new-password" />
+                    <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-2" />
+                </div>
+
+                <div class="flex items-center justify-end">
+                    <x-primary-button>
+                        {{ __('Enregistrer') }}
+                    </x-primary-button>
+
+                    @if (session('status') === 'password-updated')
+                        <p class="ml-3 text-sm text-green-600 dark:text-green-400">
+                            {{ __('Mot de passe mis à jour.') }}
+                        </p>
+                    @endif
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Section Affiliation (uniquement pour les acheteurs) -->
+    @if(Auth::user()->role === 'buyer')
+    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {{ __('Affiliation') }}
+            </h3>
         </div>
 
-        <!-- Téléphone -->
-        <div class="mb-4">
-            <label for="phone" class="block font-medium text-sm text-gray-700">{{ __('Téléphone') }}</label>
-            <input id="phone" name="phone" type="tel" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" value="{{ old('phone', $user->phone) }}" required>
-            @error('phone')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
-        </div>
-
-        <!-- Adresse complète -->
-        <div class="mb-4">
-            <label for="full_address" class="block font-medium text-sm text-gray-700">{{ __('Adresse complète') }}</label>
-            <textarea id="full_address" name="full_address" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" rows="3" required>{{ old('full_address', $user->full_address) }}</textarea>
-            @error('full_address')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
-        </div>
-
-        <div class="flex items-center justify-center mt-6">
-            <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                {{ __('Enregistrer') }}
-            </button>
-
-            @if (session('status') === 'profile-updated')
-                <p class="text-sm text-green-600 ml-3">
-                    {{ __('Enregistré.') }}
+        <div class="p-6">
+            @if(Auth::user()->hasVerifiedAffiliation())
+                <div class="flex items-center text-green-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Votre affiliation est vérifiée.</span>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Vérifiée le {{ Auth::user()->affiliation_verified_at->format('d/m/Y à H:i') }}
                 </p>
+            @else
+                <div class="flex items-center text-red-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Votre affiliation n'est pas encore vérifiée.</span>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Utilisez le code <strong>{{ Auth::user()->affiliation_code }}</strong> pour vérifier votre affiliation.
+                </p>
+                <form method="POST" action="{{ route('affiliation.resend') }}" class="mt-2">
+                    @csrf
+                    <x-secondary-button type="submit">
+                        {{ __('Recevoir mon code à nouveau') }}
+                    </x-secondary-button>
+                </form>
             @endif
         </div>
-    </form>
-
-    <!-- Section Mise à jour du mot de passe -->
-    <div class="mt-10 pt-10 border-t border-gray-200">
-        <header class="text-center mb-6">
-            <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-                {{ __('Mise à jour du mot de passe') }}
-            </h2>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                {{ __('Assurez-vous que votre compte utilise un mot de passe long et aléatoire pour rester en sécurité.') }}
-            </p>
-        </header>
-
-        <form method="post" action="{{ route('password.update') }}" class="mt-6 space-y-6">
-            @csrf
-            @method('put')
-
-            <!-- Mot de passe actuel -->
-            <div class="mb-4">
-                <label for="current_password" class="block font-medium text-sm text-gray-700">{{ __('Mot de passe actuel') }}</label>
-                <input id="current_password" name="current_password" type="password" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" autocomplete="current-password">
-                @error('current_password', 'updatePassword')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
-            </div>
-
-            <!-- Nouveau mot de passe -->
-            <div class="mb-4">
-                <label for="password" class="block font-medium text-sm text-gray-700">{{ __('Nouveau mot de passe') }}</label>
-                <input id="password" name="password" type="password" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" autocomplete="new-password">
-                @error('password', 'updatePassword')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
-            </div>
-
-            <!-- Confirmation du mot de passe -->
-            <div class="mb-4">
-                <label for="password_confirmation" class="block font-medium text-sm text-gray-700">{{ __('Confirmer le mot de passe') }}</label>
-                <input id="password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" autocomplete="new-password">
-                @error('password_confirmation', 'updatePassword')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
-            </div>
-
-            <div class="flex items-center justify-center mt-6">
-                <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                    {{ __('Enregistrer') }}
-                </button>
-
-                @if (session('status') === 'password-updated')
-                    <p class="text-sm text-green-600 ml-3">
-                        {{ __('Enregistré.') }}
-                    </p>
-                @endif
-            </div>
-        </form>
     </div>
-</section>
+    @endif
+
+    <!-- Section Suppression de compte -->
+    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {{ __('Supprimer le compte') }}
+            </h3>
+        </div>
+
+        <div class="p-6">
+            <x-danger-button
+                x-data=""
+                x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
+            >{{ __('Supprimer le compte') }}</x-danger-button>
+
+            <x-modal name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>
+                <form method="post" action="{{ route('profile.destroy') }}" class="p-6">
+                    @csrf
+                    @method('delete')
+
+                    <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                        {{ __('Êtes-vous sûr de vouloir supprimer votre compte ?') }}
+                    </h2>
+
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        {{ __('Une fois votre compte supprimé, toutes ses ressources et données seront définitivement effacées. Veuillez saisir votre mot de passe pour confirmer que vous souhaitez supprimer définitivement votre compte.') }}
+                    </p>
+
+                    <div class="mt-6">
+                        <x-input-label for="password" value="{{ __('Mot de passe') }}" class="sr-only" />
+
+                        <x-text-input
+                            id="password"
+                            name="password"
+                            type="password"
+                            class="mt-1 block w-3/4"
+                            placeholder="{{ __('Mot de passe') }}"
+                        />
+
+                        <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
+                    </div>
+
+                    <div class="mt-6 flex justify-end">
+                        <x-secondary-button x-on:click="$dispatch('close')">
+                            {{ __('Annuler') }}
+                        </x-secondary-button>
+
+                        <x-danger-button class="ms-3">
+                            {{ __('Supprimer le compte') }}
+                        </x-danger-button>
+                    </div>
+                </form>
+            </x-modal>
+        </div>
+    </div>
+</div>
+@endsection

@@ -35,10 +35,35 @@
                         <span>Tableau de bord</span>
                     </a>
                     
-                    <a href="{{ route('association.buyers') }}" class="flex items-center py-2 px-4 rounded transition-colors mb-1 {{ request()->routeIs('association.buyers*') ? 'bg-gray-700' : 'hover:bg-gray-700' }}">
+                    {{-- <a href="{{ route('association.buyers') }}" class="flex items-center py-2 px-4 rounded transition-colors mb-1 {{ request()->routeIs('association.buyers*') ? 'bg-gray-700' : 'hover:bg-gray-700' }}">
                         <i class="fas fa-users mr-3"></i>
                         <span>Acheteurs</span>
-                    </a>
+                    </a> --}}
+
+                    <div class="mb-2">
+                        <a href="{{ route('association.buyers') }}" class="flex items-center py-2 px-4 rounded transition-colors mb-1 {{ request()->routeIs('association.buyers*') ? 'bg-gray-700' : 'hover:bg-gray-700' }}">
+                            <i class="fas fa-users mr-3"></i>
+                            <span>Acheteurs</span>
+                        </a>
+                        
+                        <!-- Dashboard stats pour acheteurs -->
+                        @if(request()->routeIs('association.buyers*'))
+                        <div class="bg-gray-700 rounded mt-1 py-2 px-3 mx-2 text-xs">
+                            <div class="flex items-center justify-between mb-1">
+                                <span>Acheteurs actifs:</span>
+                                <span class="bg-green-500 text-white px-1 py-0.5 rounded-sm">
+                                    {{ \App\Models\User::where('association_id', Auth::id())->where('is_active', true)->count() }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span>Affiliations vérifiées:</span>
+                                <span class="bg-blue-500 text-white px-1 py-0.5 rounded-sm">
+                                    {{ \App\Models\User::where('association_id', Auth::id())->where('affiliation_verified', true)->count() }}
+                                </span>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
                     
                     <a href="{{ route('association.reservations') }}" class="flex items-center py-2 px-4 rounded transition-colors mb-1 {{ request()->routeIs('association.reservations') ? 'bg-gray-700' : 'hover:bg-gray-700' }}">
                         <i class="fas fa-calendar-check mr-3"></i>
