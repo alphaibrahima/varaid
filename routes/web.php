@@ -8,11 +8,8 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AssociationDashboardController;
 use App\Http\Controllers\AffiliationVerificationController;
 use App\Http\Controllers\TutorialController;
-use Illuminate\Support\Facades\Auth;
-
-
 use App\Http\Controllers\DashboardController;
-
+use Illuminate\Support\Facades\Auth;
 
 // Routes d'authentification
 Route::get('/register', [RegisteredUserController::class, 'create'])
@@ -49,7 +46,8 @@ Route::middleware(['auth', 'web'])->group(function () {
     // Routes de vérification d'affiliation (AJAX)
     Route::post('/verify-affiliation-code', [ReservationController::class, 'verifyAffiliationCode'])
         ->name('affiliation.verify.ajax');
-    Route::post('/resend-affiliation-code', [ReservationController::class, 'resendAffiliationCode'])
+    // Renommé pour éviter les doublons
+    Route::post('/ajax-resend-affiliation-code', [ReservationController::class, 'resendAffiliationCode'])
         ->name('affiliation.resend.ajax');
     
     // Routes de paiement
@@ -58,19 +56,13 @@ Route::middleware(['auth', 'web'])->group(function () {
     Route::get('/payment-success', [PaymentController::class, 'handleSuccess'])
         ->name('payment.success');
     
-    // Dashboard principal
-    Route::get('/dashboard', [ReservationController::class, 'index'])
+    // Dashboard principal (utilisez DashboardController au lieu de ReservationController)
+    Route::get('/dashboard', [DashboardController::class, 'index'])
         ->middleware('verified')
         ->name('dashboard');
 
     Route::get('/tutorials', [TutorialController::class, 'index'])->name('tutorials');
-
 });
-
-
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware('verified')
-    ->name('dashboard');
 
 // Routes pour le dashboard des associations
 Route::middleware(['auth', 'web'])->prefix('association')->name('association.')->group(function () {

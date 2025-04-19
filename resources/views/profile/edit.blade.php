@@ -157,7 +157,7 @@
                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Utilisez le code <strong>{{ Auth::user()->affiliation_code }}</strong> pour vérifier votre affiliation.
                 </p>
-                <form method="POST" action="{{ route('affiliation.resend') }}" class="mt-2">
+                <form method="POST" action="{{ route('affiliation.resend.ajax') }}" class="mt-2">
                     @csrf
                     <x-secondary-button type="submit">
                         {{ __('Recevoir mon code à nouveau') }}

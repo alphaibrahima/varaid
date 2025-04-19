@@ -19,7 +19,8 @@ class AffiliationCodeNotification extends Notification implements ShouldQueue
 
     public function via($notifiable)
     {
-        return ['mail', 'twilio']; // Utilise Twilio au lieu de Vonage
+        // return ['mail', 'twilio']; // Utilise Twilio au lieu de Vonage
+        return ['mail'];
     }
 
     public function toMail($notifiable)

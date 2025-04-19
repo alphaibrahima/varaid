@@ -1,22 +1,16 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-C7dQ1pvs.css",
+    "file": "assets/app-Cp5VXnrA.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-zGgMtXNk.js",
+    "file": "assets/app-1z-TH4uy.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-C7dQ1pvs.css"
+      "assets/app-Cp5VXnrA.css"
     ]
-  },
-  "resources/js/reservation.js": {
-    "file": "assets/reservation-D3cVxmNL.js",
-    "name": "reservation",
-    "src": "resources/js/reservation.js",
-    "isEntry": true
   }
 }

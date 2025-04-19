@@ -57,7 +57,7 @@
                             <h3 class="text-sm font-medium text-yellow-800">Instructions de vérification</h3>
                             <div class="mt-2 text-sm text-yellow-700">
                                 <p>Utilisez le code <strong>{{ Auth::user()->affiliation_code }}</strong> pour vérifier votre affiliation.</p>
-                                <form method="POST" action="{{ route('affiliation.resend') }}" class="mt-3">
+                                <form method="POST" action="{{ route('affiliation.resend.ajax') }}" class="mt-2">
                                     @csrf
                                     <button type="submit" class="px-3 py-1 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-md hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
                                         Recevoir mon code par SMS et email
