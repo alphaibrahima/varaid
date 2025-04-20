@@ -750,14 +750,15 @@ function collectOwnersData() {
     return ownersData;
 }
 
-// Soumettre la réservation après paiement réussi
+// Fonction pour soumettre la réservation après paiement réussi
 function submitReservation(paymentIntentId, ownersData) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     const slotId = localStorage.getItem('selectedSlotId');
     const quantity = parseInt(document.getElementById('quantity').value) || 1;
     
-    // Récupérer la valeur skipSelection depuis localStorage
-    skipSelection = document.getElementById('skipSelection')?.checked || localStorage.getItem('skipSelection') === 'true';
+    // Récupérer la valeur skipSelection depuis localStorage ou depuis le checkbox
+    const skipSelectionCheckbox = document.getElementById('skipSelection');
+    const skipSelection = skipSelectionCheckbox ? skipSelectionCheckbox.checked : (localStorage.getItem('skipSelection') === 'true');
     
     console.log('Skip Selection avant envoi:', skipSelection);
     
@@ -798,7 +799,15 @@ function submitReservation(paymentIntentId, ownersData) {
         credentials: 'same-origin',
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(errorData => {
+                console.error('Error response:', errorData);
+                throw new Error(errorData.message || 'Erreur lors de la confirmation');
+            });
+        }
+        return response.json();
+    })
     .then(data => {
         console.log('Réponse de confirmation:', data);
         if (data.status === 'success') {

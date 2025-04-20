@@ -11,6 +11,8 @@ use PDF;
 use Carbon\Carbon;
 use App\Notifications\AffiliationCodeNotification;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Log;
+use App\Notifications\ReservationConfirmation;
 
 class ReservationController extends Controller
 {
@@ -82,7 +84,7 @@ class ReservationController extends Controller
     public function confirmReservation(Request $request)
     {
         try {
-            \Log::info('Reservation request received:', $request->all());
+            Log::info('Reservation request received:', $request->all());
     
             $user = Auth::user();
             if (!$user) {
@@ -92,13 +94,16 @@ class ReservationController extends Controller
                 ], 401);
             }
     
-            // Validate the request
+            // Validate the request - mise à jour avec tous les champs attendus
             $validated = $request->validate([
-                'reservationNumber' => 'required|string',
-                'cardholderName' => 'required|string',
-                'cardholderEmail' => 'required|email',
-                'slotId' => 'required|integer|exists:slots,id',
-                'quantity' => 'required|integer|min:1|max:4'
+                'reservation_number' => 'required|string',
+                'cardholder_name' => 'required|string',
+                'cardholder_email' => 'required|email',
+                'slot_id' => 'required|integer|exists:slots,id',
+                'quantity' => 'required|integer|min:1|max:4',
+                'skip_selection' => 'boolean',
+                'payment_intent_id' => 'required|string',
+                'owners' => 'array'
             ]);
     
             // Vérifier la limite globale de 4 agneaux par utilisateur
@@ -115,7 +120,7 @@ class ReservationController extends Controller
             }
     
             // Vérifier si le créneau a assez de capacité
-            $slot = Slot::findOrFail($validated['slotId']);
+            $slot = Slot::findOrFail($validated['slot_id']);
             $currentReservations = Reservation::where('slot_id', $slot->id)->sum('quantity');
             
             if (($currentReservations + $validated['quantity']) > $slot->max_reservations) {
@@ -125,16 +130,40 @@ class ReservationController extends Controller
                 ], 422);
             }
     
+            // Traiter et stocker les données des propriétaires
+            $ownersData = $request->input('owners');
+            if (!empty($ownersData)) {
+                // Encodage JSON pour stockage
+                $encodedOwnersData = json_encode($ownersData);
+                Log::info('Owners data encoded:', ['data' => $encodedOwnersData]);
+            } else {
+                $encodedOwnersData = null;
+            }
+    
+            // Création de la réservation avec tous les champs nécessaires
             $reservation = Reservation::create([
                 'user_id' => $user->id,
-                'slot_id' => $validated['slotId'],
-                'association_id' => $user->association ? $user->association->id : null,
-                'size' => 'grand',
+                'slot_id' => $validated['slot_id'],
+                'association_id' => $user->association_id,
+                'size' => 'grand', // Valeur par défaut
                 'quantity' => $validated['quantity'],
-                'code' => $validated['reservationNumber'],
-                'status' => 'pending',
-                'date' => now(),
+                'code' => $validated['reservation_number'],
+                'status' => 'confirmed', // Directement confirmé car paiement réussi
+                'date' => $slot->date, // Utiliser la date du créneau
+                'skip_selection' => $request->input('skip_selection', false),
+                'owners_data' => $encodedOwnersData,
+                'payment_intent_id' => $validated['payment_intent_id']
             ]);
+    
+            // Envoyer une notification de confirmation
+            if ($reservation) {
+                Log::info('Sending confirmation notification to user', ['user_id' => $user->id, 'reservation_id' => $reservation->id]);
+                try {
+                    $user->notify(new ReservationConfirmation($reservation));
+                } catch (\Exception $e) {
+                    Log::error('Error sending notification', ['error' => $e->getMessage()]);
+                }
+            }
     
             // Return success response with redirect URL
             return response()->json([
@@ -144,8 +173,20 @@ class ReservationController extends Controller
                 'redirectUrl' => route('reservation.receipt', ['code' => $reservation->code])
             ]);
     
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error:', [
+                'message' => $e->getMessage(),
+                'errors' => $e->errors()
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
+            
         } catch (\Exception $e) {
-            \Log::error('Reservation error:', [
+            Log::error('Reservation error:', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
