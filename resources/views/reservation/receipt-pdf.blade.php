@@ -45,12 +45,11 @@
 </head>
 <body>
     <div class="header">
-        <h1>Reçu de Réservation</h1>
-        <h2>{{ config('app.name') }}</h2>
+        <h3> {{ config('app.name') }} - Reçu de Réservation</h3>
     </div>
 
     <div class="details">
-        <h3>Détails de la réservation</h3>
+        <h4>Détails de la réservation</h4>
         <table>
             <tr>
                 <th>Numéro</th>
@@ -90,7 +89,7 @@
     </div>
 
     <div class="details">
-        <h3>Informations propriétaires</h3>
+        <h4>Informations propriétaires</h4>
         <table>
             <tr>
                 <th>#</th>
@@ -117,7 +116,7 @@
     </div>
 
     <div class="details">
-        <h3>Client</h3>
+        <h4>Client</h4>
         <table>
             <tr>
                 <th>Nom</th>
