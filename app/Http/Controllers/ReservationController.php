@@ -52,9 +52,8 @@ class ReservationController extends Controller
             return response()->json(['error' => 'Date invalide'], 400);
         }
     
-        // Récupérer les créneaux disponibles pour cette date avec le nombre de places restantes
+        // Récupérer TOUS les créneaux pour cette date (y compris les bloqués)
         $slots = Slot::where('date', $date)
-            ->where('available', true)
             ->orderBy('start_time')
             ->get()
             ->map(function($slot) {
@@ -64,7 +63,7 @@ class ReservationController extends Controller
                     ->sum('quantity');
                 
                 // Ajouter la propriété places_restantes
-                $slot->places_restantes = max(0, $slot->max_reservations - $reservedCount);
+                $slot->places_restantes = $slot->available ? max(0, $slot->max_reservations - $reservedCount) : 0;
                 
                 return $slot;
             });

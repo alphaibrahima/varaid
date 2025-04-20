@@ -61,7 +61,17 @@
             </tr>
             <tr>
                 <th>Créneau</th>
-                <td>{{ $reservation->slot->start_time }}</td>
+                <td>
+                    @if($reservation->slot && $reservation->slot->start_time)
+                        @if(is_string($reservation->slot->start_time))
+                            {{ substr($reservation->slot->start_time, 0, 5) }}
+                        @else
+                            {{ $reservation->slot->start_time->format('H:i') }}
+                        @endif
+                    @else
+                        Non spécifié
+                    @endif
+                </td>
             </tr>
             <tr>
                 <th>Quantité</th>

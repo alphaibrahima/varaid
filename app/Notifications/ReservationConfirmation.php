@@ -8,12 +8,14 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReservationConfirmation extends Notification implements ShouldQueue
 {
     use Queueable;
 
     protected $reservation;
+    protected $pdfPath;
 
     /**
      * Create a new notification instance.
@@ -21,6 +23,7 @@ class ReservationConfirmation extends Notification implements ShouldQueue
     public function __construct(Reservation $reservation)
     {
         $this->reservation = $reservation;
+        $this->generatePdf();
     }
 
     /**
@@ -38,17 +41,28 @@ class ReservationConfirmation extends Notification implements ShouldQueue
     {
         Log::info('Preparing reservation confirmation email', [
             'reservation_id' => $this->reservation->id,
-            'user_id' => $notifiable->id
+            'user_id' => $notifiable->id,
+            'pdf_generated' => isset($this->pdfPath)
         ]);
         
         try {
             // Formater la date du créneau
             $formattedDate = $this->reservation->date ? $this->reservation->date->format('d/m/Y') : 'Non spécifiée';
             
-            // Formater l'heure du créneau
-            $formattedTime = $this->reservation->slot ? 
-                (isset($this->reservation->slot->start_time) ? substr($this->reservation->slot->start_time, 0, 5) : 'Non spécifiée') : 
-                'Non spécifiée';
+            // Formater l'heure du créneau correctement
+            $formattedTime = 'Non spécifiée';
+            if ($this->reservation->slot) {
+                if (isset($this->reservation->slot->start_time)) {
+                    // Gérer différents formats possibles de l'heure
+                    if (is_string($this->reservation->slot->start_time)) {
+                        // Si c'est une chaîne, extrait les 5 premiers caractères (HH:MM)
+                        $formattedTime = substr($this->reservation->slot->start_time, 0, 5);
+                    } elseif (is_object($this->reservation->slot->start_time) && method_exists($this->reservation->slot->start_time, 'format')) {
+                        // Si c'est un objet DateTime/Carbon
+                        $formattedTime = $this->reservation->slot->start_time->format('H:i');
+                    }
+                }
+            }
             
             // Montant de l'acompte
             $depositAmount = $this->reservation->quantity * 100;
@@ -91,11 +105,27 @@ class ReservationConfirmation extends Notification implements ShouldQueue
             $mailMessage->action('Voir votre réservation', route('reservation.receipt', ['code' => $this->reservation->code]))
                 ->line('Merci de nous avoir fait confiance!');
             
+            // Ajouter la pièce jointe PDF si elle existe
+            if (isset($this->pdfPath) && file_exists($this->pdfPath)) {
+                Log::info('Attaching PDF to email', ['path' => $this->pdfPath]);
+                
+                $mailMessage->attach($this->pdfPath, [
+                    'as' => 'reservation-' . $this->reservation->code . '.pdf',
+                    'mime' => 'application/pdf',
+                ]);
+            } else {
+                Log::warning('PDF file not found or not generated', [
+                    'reservation_id' => $this->reservation->id,
+                    'pdf_path' => $this->pdfPath ?? 'null'
+                ]);
+            }
+            
             return $mailMessage;
         } catch (\Exception $e) {
             Log::error('Error preparing reservation confirmation email', [
                 'error' => $e->getMessage(),
-                'reservation_id' => $this->reservation->id
+                'reservation_id' => $this->reservation->id,
+                'trace' => $e->getTraceAsString()
             ]);
             
             // Fallback simple en cas d'erreur
@@ -103,6 +133,43 @@ class ReservationConfirmation extends Notification implements ShouldQueue
                 ->subject('Confirmation de votre réservation')
                 ->line('Votre réservation a été confirmée. Code: ' . $this->reservation->code)
                 ->action('Voir les détails', route('reservation.receipt', ['code' => $this->reservation->code]));
+        }
+    }
+
+    /**
+     * Generate PDF receipt
+     */
+    protected function generatePdf()
+    {
+        try {
+            Log::info('Generating PDF for reservation', ['id' => $this->reservation->id]);
+            
+            // Charger les relations si elles ne sont pas déjà chargées
+            if (!$this->reservation->relationLoaded('user')) {
+                $this->reservation->load(['user', 'slot', 'association']);
+            }
+            
+            $pdf = PDF::loadView('reservation.receipt-pdf', [
+                'reservation' => $this->reservation
+            ]);
+            
+            $path = storage_path('app/receipts/');
+            
+            if (!file_exists($path)) {
+                mkdir($path, 0755, true);
+            }
+            
+            $this->pdfPath = $path . 'reservation-' . $this->reservation->code . '.pdf';
+            $pdf->save($this->pdfPath);
+            
+            Log::info('PDF generated successfully', ['path' => $this->pdfPath]);
+        } catch (\Exception $e) {
+            Log::error('Error generating PDF', [
+                'error' => $e->getMessage(),
+                'reservation_id' => $this->reservation->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            $this->pdfPath = null;
         }
     }
 }

@@ -17,7 +17,8 @@ class Slot extends Model
         'start_time',
         'end_time',
         'max_reservations', 
-        'available' 
+        'available' ,
+        'block_reason'
     ];
 
     protected $casts = [

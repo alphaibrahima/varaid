@@ -15,12 +15,6 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\SlotResource\Pages;
 
-
-// use App\Filament\Resources\SlotResource\Pages\ListSlots;
-// use App\Filament\Resources\SlotResource\Pages\CreateSlot;
-// use App\Filament\Resources\SlotResource\Pages\EditSlot;
-
-
 class SlotResource extends Resource
 {
     protected static ?string $model = Slot::class;
@@ -29,13 +23,10 @@ class SlotResource extends Resource
     protected static ?string $modelLabel = 'Créneau';
     protected static ?string $pluralModelLabel = 'Créneaux';
 
-
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-
-
                 // Date et heures
                 Forms\Components\DatePicker::make('date')
                     ->required()
@@ -58,6 +49,12 @@ class SlotResource extends Resource
                 // Configuration des créneaux
                 Forms\Components\Fieldset::make('Configuration des créneaux')
                     ->schema([
+                        Forms\Components\TextInput::make('max_reservations')
+                            ->label('Nombre maximum de réservations')
+                            ->numeric()
+                            ->default(50)
+                            ->required(),
+
                         Forms\Components\Select::make('duration')
                             ->label('Durée des sous-créneaux')
                             ->options([
@@ -70,6 +67,22 @@ class SlotResource extends Resource
                             ->required(),
                     ]),
 
+                // Statut de disponibilité
+                Forms\Components\Fieldset::make('Statut du créneau')
+                    ->schema([
+                        Forms\Components\Toggle::make('available')
+                            ->label('Créneau disponible')
+                            ->default(true)
+                            ->reactive(),
+                        
+                        Forms\Components\Textarea::make('block_reason')
+                            ->label('Raison du blocage')
+                            ->placeholder('Indiquez la raison pour laquelle ce créneau est bloqué')
+                            ->helperText('Ce champ est visible uniquement lorsque le créneau est bloqué')
+                            ->visible(fn (callable $get) => !$get('available'))
+                            ->columnSpanFull(),
+                    ]),
+
                 // Bouton de génération
                 Forms\Components\Actions::make([
                     Forms\Components\Actions\Action::make('generateSlots')
@@ -80,11 +93,11 @@ class SlotResource extends Resource
                             
                             // Validation
                             $validator = Validator::make($data, [
-                                // 'association_id' => 'required|exists:users,id',
                                 'date' => 'required|date',
                                 'start_time' => 'required|date_format:H:i',
                                 'end_time' => 'required|date_format:H:i|after:start_time',
-                                'duration' => 'required|integer|min:30'
+                                'duration' => 'required|integer|min:30',
+                                'max_reservations' => 'required|integer|min:1'
                             ]);
 
                             if ($validator->fails()) {
@@ -103,7 +116,6 @@ class SlotResource extends Resource
 
                             // Vérification des créneaux existants
                             $existingSlots = Slot::where('date', $data['date'])
-                                // ->where('association_id', $data['association_id'])
                                 ->where(function ($query) use ($start, $end) {
                                     $query->whereBetween('start_time', [$start, $end])
                                         ->orWhereBetween('end_time', [$start, $end]);
@@ -124,15 +136,13 @@ class SlotResource extends Resource
                             while ($current < $end) {
                                 $slotEnd = $current->copy()->addMinutes($data['duration']);
 
-
                                 if ($slotEnd > $end) break;
 
                                 Slot::create([
-                                    // 'association_id' => $data['association_id'],
                                     'date' => $data['date'],
                                     'start_time' => $current->format('H:i'),
                                     'end_time' => $slotEnd->format('H:i'),
-                                    'max_reservations' => 50,
+                                    'max_reservations' => $data['max_reservations'],
                                     'available' => true
                                 ]);
 
@@ -168,8 +178,16 @@ class SlotResource extends Resource
                     ->label('Fin'),    
                     
                 Tables\Columns\IconColumn::make('available')
-                    ->label('Dispo')
+                    ->label('Disponible')
                     ->boolean(),
+                    
+                Tables\Columns\TextColumn::make('block_reason')
+                    ->label('Raison du blocage')
+                    ->placeholder('---')
+                    ->visible(fn ($record) => $record && !$record->available),
+                    
+                Tables\Columns\TextColumn::make('max_reservations')
+                    ->label('Capacité max.'),
                     
                 Tables\Columns\TextColumn::make('reservations_count')
                     ->label('Résas')
@@ -181,7 +199,7 @@ class SlotResource extends Resource
                         Forms\Components\DatePicker::make('from')
                             ->label('Depuis'),
                         Forms\Components\DatePicker::make('until')
-                            ->label('Jusquà'),
+                            ->label('Jusqu\'à'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
@@ -193,14 +211,111 @@ class SlotResource extends Resource
                                 $data['until'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
                             );
+                    }),
+                Tables\Filters\Filter::make('available')
+                    ->label('Disponibilité')
+                    ->form([
+                        Forms\Components\Select::make('availability')
+                            ->label('Disponibilité')
+                            ->options([
+                                true => 'Disponibles',
+                                false => 'Bloqués',
+                            ])
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            isset($data['availability']),
+                            fn (Builder $query): Builder => $query->where('available', $data['availability']),
+                        );
                     })
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->color('warning'), // Couleur jaune/orange pour l'édition
+                    
+                Tables\Actions\DeleteAction::make()
+                    ->color('danger'), // Couleur rouge pour la suppression
+                    
+                Tables\Actions\Action::make('toggleAvailability')
+                    ->label(fn ($record): string => $record && $record->available ? 'Bloquer' : 'Débloquer')
+                    ->icon(fn ($record): string => $record && $record->available ? 'heroicon-o-lock-closed' : 'heroicon-o-lock-open')
+                    ->color(fn ($record): string => $record && $record->available ? 'primary' : 'success') // Bleu pour bloquer, vert pour débloquer
+                    ->form(fn ($record) => [
+                        Forms\Components\Textarea::make('block_reason')
+                            ->label('Raison du blocage')
+                            ->placeholder('Indiquez la raison pour laquelle ce créneau est bloqué')
+                            ->required(fn () => $record && $record->available)
+                            ->hidden(fn () => $record && !$record->available),
+                    ])
+                    ->action(function (Slot $record, array $data): void {
+                        if ($record->available) {
+                            // Si le créneau est actuellement disponible, on le bloque
+                            $record->update([
+                                'available' => false,
+                                'block_reason' => $data['block_reason'] ?? null,
+                            ]);
+                            
+                            Notification::make()
+                                ->title('Créneau bloqué')
+                                ->success()
+                                ->send();
+                        } else {
+                            // Si le créneau est actuellement bloqué, on le débloque
+                            $record->update([
+                                'available' => true,
+                                'block_reason' => null,
+                            ]);
+                            
+                            Notification::make()
+                                ->title('Créneau débloqué')
+                                ->success()
+                                ->send();
+                        }
+                    }),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\BulkAction::make('bulkBlock')
+                    ->label('Bloquer les créneaux sélectionnés')
+                    ->icon('heroicon-o-lock-closed')
+                    ->color('primary') // Bleu pour bloquer en masse
+                    ->form([
+                        Forms\Components\Textarea::make('bulk_block_reason')
+                            ->label('Raison du blocage')
+                            ->placeholder('Indiquez la raison pour laquelle ces créneaux sont bloqués')
+                            ->required(),
+                    ])
+                    ->action(function (array $records, array $data): void {
+                        foreach ($records as $record) {
+                            $record->update([
+                                'available' => false,
+                                'block_reason' => $data['bulk_block_reason']
+                            ]);
+                        }
+                        
+                        Notification::make()
+                            ->title(count($records) . ' créneaux ont été bloqués')
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\BulkAction::make('bulkUnblock')
+                    ->label('Débloquer les créneaux sélectionnés')
+                    ->icon('heroicon-o-lock-open')
+                    ->color('success') // Vert pour débloquer en masse
+                    ->action(function (array $records): void {
+                        foreach ($records as $record) {
+                            $record->update([
+                                'available' => true,
+                                'block_reason' => null
+                            ]);
+                        }
+                        
+                        Notification::make()
+                            ->title(count($records) . ' créneaux ont été débloqués')
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\DeleteBulkAction::make()
+                    ->color('danger'), // Rouge pour la suppression en masse
             ]);
     }
 

@@ -127,20 +127,30 @@ function selectDay(day) {
 
             if (Array.isArray(response) && response.length > 0) {
                 response.forEach(slot => {
-                    let placesText = slot.places_restantes <= 0 
-                        ? "Complet" 
-                        : `${slot.places_restantes} places restantes`;
+                    let cardClass = "";
+                    let clickAttr = "";
+                    let placesText = "";
                     
-                    let cardClass = slot.places_restantes <= 0 
-                        ? "card creneaux-heure bg-light text-muted" 
-                        : "card creneaux-heure";
-                    
-                    let clickAttr = slot.places_restantes <= 0 
-                        ? "" 
-                        : `onclick="selectTimeSlot('${slot.id}', '${slot.start_time}')"`;
+                    if (!slot.available) {
+                        // Créneau bloqué - afficher juste "Bloqué" sans la raison
+                        cardClass = "card creneaux-heure bg-light text-muted";
+                        clickAttr = ""; // Pas de click event
+                        placesText = `<span class="badge bg-danger">Bloqué</span>`;
+                        // Suppression de l'affichage de la raison du blocage
+                    } else if (slot.places_restantes <= 0) {
+                        // Créneau complet
+                        cardClass = "card creneaux-heure bg-light text-muted";
+                        clickAttr = ""; // Pas de click event
+                        placesText = "Complet";
+                    } else {
+                        // Créneau disponible
+                        cardClass = "card creneaux-heure";
+                        clickAttr = `onclick="selectTimeSlot('${slot.id}', '${slot.start_time}')"`;
+                        placesText = `${slot.places_restantes} places restantes`;
+                    }
                     
                     let cardHtml = `
-                        <div class="col-md-4 mb-4"> <!-- Colonne avec espacement -->
+                        <div class="col-md-4 mb-4">
                             <div class="${cardClass}" ${clickAttr}>
                                 <div class="card-body text-center">
                                     <h5 class="card-title">${slot.start_time.substring(0, 5)}</h5>
