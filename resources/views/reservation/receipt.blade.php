@@ -7,6 +7,7 @@
             <div class="card">
                 <div class="card-header bg-success text-white">
                     <h3 class="mb-0 text-center text-md-center text-lg-center">Confirmation de Réservation</h3>
+                    <p><strong>Jour du sacrifice :</strong> {{ $reservation->eid_day }}</p>
                 </div>
                 <div class="card-body">
                     <div class="row mb-4">

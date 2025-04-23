@@ -57,4 +57,25 @@ class Reservation extends Model
         return $query->whereMonth('created_at', now()->month)
                     ->whereYear('created_at', now()->year);
     }
+
+
+    // Dans app/Models/Reservation.php
+
+    /**
+     * Détermine le jour de l'Aïd correspondant à la date de réservation
+     */
+    public function getEidDayAttribute()
+    {
+        // Les dates spécifiques pour 2025
+        $firstDay = \Carbon\Carbon::parse('2025-05-31');
+        $secondDay = \Carbon\Carbon::parse('2025-06-01');
+        
+        if ($this->date && $this->date->isSameDay($firstDay)) {
+            return '1er jour de l\'Aïd';
+        } elseif ($this->date && $this->date->isSameDay($secondDay)) {
+            return '2ème jour de l\'Aïd';
+        } else {
+            return 'jour de l\'Aïd'; // Cas par défaut
+        }
+    }
 }

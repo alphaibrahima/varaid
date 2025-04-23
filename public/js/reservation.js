@@ -118,6 +118,7 @@ function selectDay(day) {
     let url = `/get-slots/${encodeURIComponent(selectedDay)}`;
 
     // Requête AJAX pour récupérer les créneaux horaires
+    // Dans la fonction qui génère les cartes de créneaux
     $.get(url)
         .done(function(response) {
             console.log(response); // Debugging : voir la réponse
@@ -131,12 +132,16 @@ function selectDay(day) {
                     let clickAttr = "";
                     let placesText = "";
                     
+                    // Formater l'affichage de l'heure pour inclure début et fin
+                    const startTime = slot.start_time.substring(0, 5).replace(':', 'h');
+                    const endTime = slot.end_time.substring(0, 5).replace(':', 'h');
+                    const timeRange = `${startTime} - ${endTime}`;
+                    
                     if (!slot.available) {
-                        // Créneau bloqué - afficher juste "Bloqué" sans la raison
+                        // Créneau bloqué
                         cardClass = "card creneaux-heure bg-light text-muted";
                         clickAttr = ""; // Pas de click event
                         placesText = `<span class="badge bg-danger">Bloqué</span>`;
-                        // Suppression de l'affichage de la raison du blocage
                     } else if (slot.places_restantes <= 0) {
                         // Créneau complet
                         cardClass = "card creneaux-heure bg-light text-muted";
@@ -153,7 +158,7 @@ function selectDay(day) {
                         <div class="col-md-4 mb-4">
                             <div class="${cardClass}" ${clickAttr}>
                                 <div class="card-body text-center">
-                                    <h5 class="card-title">${slot.start_time.substring(0, 5)}</h5>
+                                    <h5 class="card-title">${timeRange}</h5>
                                     <p class="card-text"><small class="text-muted">${placesText}</small></p>
                                 </div>
                             </div>
@@ -477,7 +482,7 @@ function generateOwnerFields() {
                         
                         <div class="row g-3">
                             <div class="col-12">
-                                <label for="owner-address-${i}" class="form-label">Adresse</label>
+                                <label for="owner-address-${i}" class="form-label">Ville, Code postal</label>
                                 <textarea class="form-control owner-input" id="owner-address-${i}" 
                                     name="owners[${i}][address]" rows="2" ${readOnlyAttr} required>${addressValue}</textarea>
                             </div>
