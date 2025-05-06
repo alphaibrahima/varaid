@@ -80,6 +80,7 @@ class ReservationConfirmation extends Notification implements ShouldQueue
                 ->line('Numéro de réservation: ' . $this->reservation->code)
                 ->line('Date: ' . $formattedDate)
                 ->line('Heure: ' . $formattedTime)
+                // ->line('Jour du sacrifice: ' . $this->$reservation->eid_day)
                 ->line('Quantité: ' . $this->reservation->quantity)
                 ->line('Sélection sur place: ' . $selectionMessage)
                 ->line('Acompte payé: ' . $depositAmount . '€')

@@ -74,8 +74,9 @@
                 </td>
             </tr>
             <tr>
+                <th>Jour du sacrifice :</th>
                 <td>
-                    <p><strong>Jour du sacrifice :</strong> {{ $reservation->eid_day }}</p>
+                    {{ $reservation->eid_day }}
                 </td>
             </tr>
             <tr>
