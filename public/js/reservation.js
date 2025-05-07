@@ -67,13 +67,108 @@ function goToStep(step) {
         }
     });
     
-    // Initialiser Stripe et mettre à jour le bouton si on est à l'étape 4
+    // Si nous sommes à l'étape 4, mettez à jour le récapitulatif
     if (step === 4) {
         updateRecap(); // Met à jour le récapitulatif et génère les champs propriétaires
         updateDeposit(); // Mettre à jour l'acompte
-        updatePaymentButton(); // Mettre à jour le texte du bouton
-        initStripe();
     }
+}
+
+
+
+// Nouvelle fonction pour soumettre la réservation sans paiement Stripe
+function confirmReservation() {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const slotId = localStorage.getItem('selectedSlotId');
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
+    
+    // Récupérer la valeur skipSelection depuis localStorage ou depuis le checkbox
+    const skipSelectionCheckbox = document.getElementById('skipSelection');
+    const skipSelection = skipSelectionCheckbox ? skipSelectionCheckbox.checked : (localStorage.getItem('skipSelection') === 'true');
+    
+    console.log('Skip Selection avant envoi:', skipSelection);
+    
+    if (!csrfToken) {
+        console.error('CSRF token missing');
+        alert('Erreur: Token CSRF manquant');
+        return;
+    }
+    
+    // Valider les champs propriétaires
+    if (!validateOwnerFields()) {
+        alert('Veuillez remplir correctement les informations pour tous les propriétaires');
+        return;
+    }
+    
+    const ownersData = collectOwnersData();
+    
+    // Désactiver le bouton pendant le traitement
+    const submitButton = document.getElementById('submit-reservation');
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Traitement en cours...';
+    }
+    
+    const data = {
+        reservation_number: 'R-' + Math.floor(100000 + Math.random() * 900000),
+        slot_id: parseInt(slotId),                        
+        quantity: quantity,
+        skip_selection: skipSelection,                    
+        owners: ownersData
+    };
+    
+    // Ajouter pour déboguer
+    console.log('Données JSON avant envoi:', JSON.stringify(data, null, 2));
+    
+    fetch('/reservation/confirm', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(errorData => {
+                console.error('Error response:', errorData);
+                throw new Error(errorData.message || 'Erreur lors de la confirmation');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Réponse de confirmation:', data);
+        if (data.status === 'success') {
+            // Vider les données locales
+            localStorage.removeItem('selectedSlotId');
+            localStorage.removeItem('selectedTime');
+            localStorage.removeItem('skipSelection');
+            
+            // Rediriger vers la page de reçu
+            if (data.redirectUrl) {
+                window.location.href = data.redirectUrl;
+            } else {
+                console.error('URL de redirection non fournie');
+                alert('Réservation confirmée mais impossible de rediriger vers le reçu.');
+            }
+        } else {
+            throw new Error(data.message || 'Une erreur est survenue');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur lors de la confirmation:', error);
+        alert('Erreur lors de la confirmation: ' + error.message);
+        
+        // Réactiver le bouton
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Confirmer la réservation';
+        }
+    });
 }
 
 // Sélection du jour
@@ -213,7 +308,7 @@ function selectTimeSlot(slotId, time) {
 function updateDeposit() {
     const depositElement = document.getElementById('recap-deposit');
     const quantity = parseInt(document.getElementById('quantity').value) || 1;
-    const deposit = quantity * 100; // 100€ par unité
+    const deposit = quantity * 50; // 50€ par unité
     depositElement.textContent = `${deposit},00 €`;
 }
 
@@ -385,8 +480,6 @@ function showLimitReachedAlert() {
 }
 
 
-
-
 // Sélection de la taille
 function selectSize(size) {
     selectedSize = size;
@@ -523,110 +616,110 @@ let elements;
 let paymentElement;
 
 // Initialisation de Stripe
-async function initStripe() {
-    try {
-        console.log('Initialisation de Stripe');
+// async function initStripe() {
+//     try {
+//         console.log('Initialisation de Stripe');
         
-        // Vérifier si l'affiliation est confirmée
-        if (typeof affiliationVerified !== 'undefined' && !affiliationVerified) {
-            // Afficher la modal d'affiliation
-            const affiliationModal = new bootstrap.Modal(document.getElementById('affiliationModal'));
-            affiliationModal.show();
-            return;
-        }
+//         // Vérifier si l'affiliation est confirmée
+//         if (typeof affiliationVerified !== 'undefined' && !affiliationVerified) {
+//             // Afficher la modal d'affiliation
+//             const affiliationModal = new bootstrap.Modal(document.getElementById('affiliationModal'));
+//             affiliationModal.show();
+//             return;
+//         }
         
-        const slotId = localStorage.getItem('selectedSlotId');
-        const quantity = parseInt(document.getElementById('quantity').value) || 1;
+//         const slotId = localStorage.getItem('selectedSlotId');
+//         const quantity = parseInt(document.getElementById('quantity').value) || 1;
         
-        // Désactiver le bouton pendant le chargement
-        const submitButton = document.getElementById('submit-payment');
-        if (submitButton) {
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Chargement...';
-        }
+//         // Désactiver le bouton pendant le chargement
+//         const submitButton = document.getElementById('submit-payment');
+//         if (submitButton) {
+//             submitButton.disabled = true;
+//             submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Chargement...';
+//         }
         
-        // Créer une intention de paiement
-        const { clientSecret, paymentIntentId } = await createPaymentIntent(slotId, quantity);
-        console.log('PaymentIntent créé avec succès:', { clientSecret: '***', paymentIntentId });
+//         // Créer une intention de paiement
+//         const { clientSecret, paymentIntentId } = await createPaymentIntent(slotId, quantity);
+//         console.log('PaymentIntent créé avec succès:', { clientSecret: '***', paymentIntentId });
         
-        // Initialiser Stripe avec la clé publique
-        if (window.stripeConfig && window.stripeConfig.publicKey) {
-            stripe = Stripe(window.stripeConfig.publicKey);
-        } else {
-            stripe = Stripe('pk_test_51JUagXA0Pqxe87f5NFHuEKUQO0xyy8UIUzzlUbTlnc9ixFC30N0x1DCzSFrTDaLrgBmDUmBDRnJEQnOd9vf1U5Bq00uag0krea');
-        }
+//         // Initialiser Stripe avec la clé publique
+//         if (window.stripeConfig && window.stripeConfig.publicKey) {
+//             stripe = Stripe(window.stripeConfig.publicKey);
+//         } else {
+//             stripe = Stripe('pk_test_51JUagXA0Pqxe87f5NFHuEKUQO0xyy8UIUzzlUbTlnc9ixFC30N0x1DCzSFrTDaLrgBmDUmBDRnJEQnOd9vf1U5Bq00uag0krea');
+//         }
         
-        // Vérifier si l'élément existe
-        const paymentElementContainer = document.getElementById('payment-element');
-        if (!paymentElementContainer) {
-            throw new Error("L'élément #payment-element n'existe pas dans le DOM");
-        }
+//         // Vérifier si l'élément existe
+//         const paymentElementContainer = document.getElementById('payment-element');
+//         if (!paymentElementContainer) {
+//             throw new Error("L'élément #payment-element n'existe pas dans le DOM");
+//         }
         
-        // Créer les éléments Stripe
-        elements = stripe.elements({
-            clientSecret,
-            appearance: {
-                theme: 'stripe',
-            }
-        });
+//         // Créer les éléments Stripe
+//         elements = stripe.elements({
+//             clientSecret,
+//             appearance: {
+//                 theme: 'stripe',
+//             }
+//         });
         
-        // Créer et monter l'élément de paiement
-        paymentElement = elements.create('payment');
-        paymentElement.mount('#payment-element');
+//         // Créer et monter l'élément de paiement
+//         paymentElement = elements.create('payment');
+//         paymentElement.mount('#payment-element');
         
-        // Réactiver le bouton
-        if (submitButton) {
-            submitButton.disabled = false;
-            submitButton.innerHTML = `Confirmer et payer l'acompte de ${quantity * 100},00 €`;
-        }
+//         // Réactiver le bouton
+//         if (submitButton) {
+//             submitButton.disabled = false;
+//             submitButton.innerHTML = `Confirmer et payer l'acompte de ${quantity * 100},00 €`;
+//         }
         
-        // Écouter la soumission du formulaire
-        const form = document.getElementById('payment-form');
-        if (form) {
-            form.addEventListener('submit', handlePaymentSubmission);
-        }
-    } catch (error) {
-        console.error('Error initializing Stripe:', error);
-        alert('Une erreur est survenue lors de l\'initialisation du paiement. Veuillez réessayer.');
+//         // Écouter la soumission du formulaire
+//         const form = document.getElementById('payment-form');
+//         if (form) {
+//             form.addEventListener('submit', handlePaymentSubmission);
+//         }
+//     } catch (error) {
+//         console.error('Error initializing Stripe:', error);
+//         alert('Une erreur est survenue lors de l\'initialisation du paiement. Veuillez réessayer.');
         
-        // Réactiver le bouton en cas d'erreur
-        const submitButton = document.getElementById('submit-payment');
-        if (submitButton) {
-            submitButton.disabled = false;
-            submitButton.innerHTML = 'Réessayer';
-        }
-    }
-}
+//         // Réactiver le bouton en cas d'erreur
+//         const submitButton = document.getElementById('submit-payment');
+//         if (submitButton) {
+//             submitButton.disabled = false;
+//             submitButton.innerHTML = 'Réessayer';
+//         }
+//     }
+// }
 
 // Fonction pour créer une intention de paiement
-async function createPaymentIntent(slotId, quantity) {
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+// async function createPaymentIntent(slotId, quantity) {
+//     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     
-    console.log('Envoi de la requête create-payment-intent avec slotId:', slotId, 'et quantity:', quantity);
+//     console.log('Envoi de la requête create-payment-intent avec slotId:', slotId, 'et quantity:', quantity);
     
-    const response = await fetch('/create-payment-intent', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-            slotId: slotId,
-            quantity: quantity
-        })
-    });
+//     const response = await fetch('/create-payment-intent', {
+//         method: 'POST',
+//         headers: {
+//             'Content-Type': 'application/json',
+//             'X-CSRF-TOKEN': csrfToken,
+//             'Accept': 'application/json'
+//         },
+//         body: JSON.stringify({
+//             slotId: slotId,
+//             quantity: quantity
+//         })
+//     });
     
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Réponse HTTP non-OK:', response.status, errorText);
-        throw new Error(`Erreur HTTP ${response.status}: ${errorText}`);
-    }
+//     if (!response.ok) {
+//         const errorText = await response.text();
+//         console.error('Réponse HTTP non-OK:', response.status, errorText);
+//         throw new Error(`Erreur HTTP ${response.status}: ${errorText}`);
+//     }
     
-    const data = await response.json();
-    console.log('Réponse create-payment-intent:', data);
-    return data;
-}
+//     const data = await response.json();
+//     console.log('Réponse create-payment-intent:', data);
+//     return data;
+// }
 
 // Validation des champs propriétaires
 function validateOwnerFields() {
@@ -672,71 +765,71 @@ function validatePhone(phone) {
 }
 
 // Traitement du paiement
-async function handlePaymentSubmission(e) {
-    e.preventDefault();
+// async function handlePaymentSubmission(e) {
+//     e.preventDefault();
     
-    // Vérifier si l'affiliation est confirmée
-    if (typeof affiliationVerified !== 'undefined' && !affiliationVerified) {
-        // Afficher la modal d'affiliation
-        const affiliationModal = new bootstrap.Modal(document.getElementById('affiliationModal'));
-        affiliationModal.show();
-        return;
-    }
+//     // Vérifier si l'affiliation est confirmée
+//     if (typeof affiliationVerified !== 'undefined' && !affiliationVerified) {
+//         // Afficher la modal d'affiliation
+//         const affiliationModal = new bootstrap.Modal(document.getElementById('affiliationModal'));
+//         affiliationModal.show();
+//         return;
+//     }
     
-    // Valider les champs propriétaires
-    if (!validateOwnerFields()) {
-        alert('Veuillez remplir les noms et prénoms pour tous les propriétaires');
-        return;
-    }
+//     // Valider les champs propriétaires
+//     if (!validateOwnerFields()) {
+//         alert('Veuillez remplir les noms et prénoms pour tous les propriétaires');
+//         return;
+//     }
     
-    const submitButton = document.getElementById('submit-payment');
-    if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Traitement en cours...';
-    }
+//     const submitButton = document.getElementById('submit-payment');
+//     if (submitButton) {
+//         submitButton.disabled = true;
+//         submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Traitement en cours...';
+//     }
     
-    const ownersData = collectOwnersData();
+//     const ownersData = collectOwnersData();
     
-    try {
-        // Confirmer le paiement avec Stripe
-        console.log('Confirmation du paiement...');
-        const result = await stripe.confirmPayment({
-            elements,
-            confirmParams: {
-                return_url: `${window.location.origin}/payment-success`,
-            },
-            redirect: 'if_required'
-        });
+//     try {
+//         // Confirmer le paiement avec Stripe
+//         console.log('Confirmation du paiement...');
+//         const result = await stripe.confirmPayment({
+//             elements,
+//             confirmParams: {
+//                 return_url: `${window.location.origin}/payment-success`,
+//             },
+//             redirect: 'if_required'
+//         });
         
-        if (result.error) {
-            // Afficher l'erreur
-            console.error('Erreur de paiement:', result.error);
-            const errorElement = document.getElementById('payment-errors');
-            if (errorElement) {
-                errorElement.textContent = result.error.message;
-            }
+//         if (result.error) {
+//             // Afficher l'erreur
+//             console.error('Erreur de paiement:', result.error);
+//             const errorElement = document.getElementById('payment-errors');
+//             if (errorElement) {
+//                 errorElement.textContent = result.error.message;
+//             }
             
-            // Réactiver le bouton
-            if (submitButton) {
-                submitButton.disabled = false;
-                submitButton.innerHTML = 'Réessayer le paiement';
-            }
-        } else if (result.paymentIntent) {
-            // Le paiement a réussi sans redirection
-            console.log('Paiement réussi sans redirection:', result.paymentIntent);
-            submitReservation(result.paymentIntent.id, ownersData);
-        }
-    } catch (error) {
-        console.error('Erreur lors du paiement:', error);
-        alert(`Erreur lors du paiement: ${error.message}`);
+//             // Réactiver le bouton
+//             if (submitButton) {
+//                 submitButton.disabled = false;
+//                 submitButton.innerHTML = 'Réessayer le paiement';
+//             }
+//         } else if (result.paymentIntent) {
+//             // Le paiement a réussi sans redirection
+//             console.log('Paiement réussi sans redirection:', result.paymentIntent);
+//             submitReservation(result.paymentIntent.id, ownersData);
+//         }
+//     } catch (error) {
+//         console.error('Erreur lors du paiement:', error);
+//         alert(`Erreur lors du paiement: ${error.message}`);
         
-        // Réactiver le bouton
-        if (submitButton) {
-            submitButton.disabled = false;
-            submitButton.innerHTML = 'Réessayer le paiement';
-        }
-    }
-}
+//         // Réactiver le bouton
+//         if (submitButton) {
+//             submitButton.disabled = false;
+//             submitButton.innerHTML = 'Réessayer le paiement';
+//         }
+//     }
+// }
 
 // Collecter les données des propriétaires
 function collectOwnersData() {
@@ -858,7 +951,7 @@ function submitReservation(paymentIntentId, ownersData) {
 // Fonction pour mettre à jour le bouton de paiement
 function updatePaymentButton() {
     const quantity = parseInt(document.getElementById('quantity').value) || 1;
-    const deposit = quantity * 100; // 100€ par unité
+    const deposit = quantity * 50; // 50€ par unité
     const paymentButton = document.getElementById('submit-payment');
     paymentButton.textContent = `Confirmer et payer l'acompte de ${deposit},00 €`;
 }

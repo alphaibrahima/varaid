@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReservationController;
-use App\Http\Controllers\PaymentController;
+// use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AssociationDashboardController;
 use App\Http\Controllers\AffiliationVerificationController;
 use App\Http\Controllers\TutorialController;
@@ -51,10 +51,10 @@ Route::middleware(['auth', 'web'])->group(function () {
         ->name('affiliation.resend.ajax');
     
     // Routes de paiement
-    Route::post('/create-payment-intent', [PaymentController::class, 'createPaymentIntent'])
-        ->name('payment.create-intent');
-    Route::get('/payment-success', [PaymentController::class, 'handleSuccess'])
-        ->name('payment.success');
+    // Route::post('/create-payment-intent', [PaymentController::class, 'createPaymentIntent'])
+    //     ->name('payment.create-intent');
+    // Route::get('/payment-success', [PaymentController::class, 'handleSuccess'])
+    //     ->name('payment.success');
     
     // Dashboard principal (utilisez DashboardController au lieu de ReservationController)
     Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -88,12 +88,12 @@ Route::get('/check-reservation-limit', [ReservationController::class, 'checkRese
     ->name('reservation.check-limit');
 
 // Route temporaire pour tester les clés Stripe
-Route::get('/test-stripe-keys', function() {
-    return [
-        'public_key' => config('services.stripe.key'),
-        'secret_key' => substr(config('services.stripe.secret'), 0, 10) . '...',
-        'keys_exist' => !empty(config('services.stripe.key')) && !empty(config('services.stripe.secret'))
-    ];
-});
+// Route::get('/test-stripe-keys', function() {
+//     return [
+//         'public_key' => config('services.stripe.key'),
+//         'secret_key' => substr(config('services.stripe.secret'), 0, 10) . '...',
+//         'keys_exist' => !empty(config('services.stripe.key')) && !empty(config('services.stripe.secret'))
+//     ];
+// });
 
 require __DIR__.'/auth.php';

@@ -95,7 +95,7 @@
             </tr>
             <tr>
                 <th>Acompte payé</th>
-                <td>{{ $reservation->quantity * 100 }}€</td>
+                <td>{{ $reservation->quantity * 50 }} €</td>
             </tr>
             {{-- <tr>
                 <th>Solde à payer</th>

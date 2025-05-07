@@ -19,9 +19,9 @@
                     <a href="{{ route('login') }}" class="btn btn-primary me-3" style="background-color: #2c3e50; border-color: #2c3e50;">
                         Se Connecter
                     </a>
-                    <a href="{{ route('register') }}" class="btn btn-outline-primary" style="color: #2c3e50; border-color: #2c3e50;">
+                    <!-- <a href="{{ route('register') }}" class="btn btn-outline-primary" style="color: #2c3e50; border-color: #2c3e50;">
                         S'inscrire
-                    </a>
+                    </a> -->
                 </div>
             </div>
             
