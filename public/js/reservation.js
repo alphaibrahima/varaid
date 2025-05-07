@@ -195,6 +195,7 @@ function selectDay(day) {
     let url = `/get-slots/${encodeURIComponent(selectedDay)}`;
 
     // Requête AJAX pour récupérer les créneaux horaires
+    // Dans la fonction selectDay du fichier public/js/reservation.js
     $.get(url)
         .done(function(response) {
             console.log(response); // Debugging : voir la réponse
@@ -204,6 +205,7 @@ function selectDay(day) {
 
             if (Array.isArray(response) && response.length > 0) {
                 response.forEach(slot => {
+                    // Nous ne traitons que les créneaux disponibles, les bloqués ont déjà été filtrés côté serveur
                     let cardClass = "";
                     let clickAttr = "";
                     let placesText = "";
@@ -213,12 +215,7 @@ function selectDay(day) {
                     const endTime = slot.end_time.substring(0, 5).replace(':', 'h');
                     const timeRange = `${startTime} - ${endTime}`;
                     
-                    if (!slot.available) {
-                        // Créneau bloqué
-                        cardClass = "card creneaux-heure bg-light text-muted";
-                        clickAttr = ""; // Pas de click event
-                        placesText = `<span class="badge bg-danger">Bloqué</span>`;
-                    } else if (slot.places_restantes <= 0) {
+                    if (slot.places_restantes <= 0) {
                         // Créneau complet
                         cardClass = "card creneaux-heure bg-light text-muted";
                         clickAttr = ""; // Pas de click event

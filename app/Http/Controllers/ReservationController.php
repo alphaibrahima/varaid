@@ -16,13 +16,18 @@ class ReservationController extends Controller
 {
     public function index()
     {
+        // Récupérer uniquement les jours qui ont au moins un créneau disponible
         $slotCounts = Slot::select('date', DB::raw('count(*) as total'))
+            ->where('available', true) // Ajouter cette condition
             ->groupBy('date')
             ->orderBy('date', 'asc')
             ->get();
     
         $user = Auth::user();
         $userAssociation = $user->association ? $user->association->name : 'N/A';
+        
+        // Vérifier si l'utilisateur a vérifié son affiliation
+        // $affiliationVerified = $user->role !== 'buyer' || $user->hasVerifiedAffiliation();
         
         // Obtenir le nombre d'agneaux déjà réservés par l'utilisateur
         $userReservationsCount = $this->getUserReservationsCount();
@@ -33,7 +38,8 @@ class ReservationController extends Controller
         return view('reservation.index', compact(
             'slotCounts', 
             'userAssociation', 
-            'user',
+            'user', 
+            // 'affiliationVerified',
             'userReservationsCount',
             'remainingReservations'
         ));
@@ -45,9 +51,10 @@ class ReservationController extends Controller
         if (!strtotime($date)) {
             return response()->json(['error' => 'Date invalide'], 400);
         }
-    
-        // Récupérer TOUS les créneaux pour cette date (y compris les bloqués)
+
+        // Récupérer seulement les créneaux disponibles pour cette date
         $slots = Slot::where('date', $date)
+            ->where('available', true) // Ajout de cette condition pour filtrer les créneaux bloqués
             ->orderBy('start_time')
             ->get()
             ->map(function($slot) {
@@ -57,11 +64,11 @@ class ReservationController extends Controller
                     ->sum('quantity');
                 
                 // Ajouter la propriété places_restantes
-                $slot->places_restantes = $slot->available ? max(0, $slot->max_reservations - $reservedCount) : 0;
+                $slot->places_restantes = max(0, $slot->max_reservations - $reservedCount);
                 
                 return $slot;
             });
-    
+
         return response()->json($slots);
     }
 
