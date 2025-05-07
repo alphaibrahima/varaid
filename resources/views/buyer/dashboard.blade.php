@@ -16,61 +16,6 @@
         </div>
     </div>
 
-    <!-- Statut d'affiliation -->
-    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
-        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                Statut d'affiliation
-            </h3>
-        </div>
-        <div class="p-6">
-            @if(Auth::user()->hasVerifiedAffiliation())
-                <div class="flex items-center bg-green-100 text-green-800 p-4 rounded-lg">
-                    <svg class="h-8 w-8 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                    <div>
-                        <p class="font-medium">Affiliation vérifiée</p>
-                        <p class="text-sm">Votre compte est bien affilié avec {{ Auth::user()->association ? Auth::user()->association->name : 'votre association' }}.</p>
-                        <p class="text-xs mt-1">Vérifié le {{ Auth::user()->affiliation_verified_at->format('d/m/Y à H:i') }}</p>
-                    </div>
-                </div>
-            @else
-                <div class="flex items-center bg-red-100 text-red-800 p-4 rounded-lg mb-4">
-                    <svg class="h-8 w-8 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                    </svg>
-                    <div>
-                        <p class="font-medium">Affiliation non vérifiée</p>
-                        <p class="text-sm">Vous devez vérifier votre affiliation avant de pouvoir effectuer une réservation.</p>
-                    </div>
-                </div>
-
-                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <h3 class="text-sm font-medium text-yellow-800">Instructions de vérification</h3>
-                            <div class="mt-2 text-sm text-yellow-700">
-                                <p>Utilisez le code <strong>{{ Auth::user()->affiliation_code }}</strong> pour vérifier votre affiliation.</p>
-                                <form method="POST" action="{{ route('affiliation.resend.ajax') }}" class="mt-2">
-                                    @csrf
-                                    <button type="submit" class="px-3 py-1 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-md hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
-                                        Recevoir mon code par SMS et email
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
-        </div>
-    </div>
-
     <!-- Actions rapides -->
     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
         <div class="p-6 border-b border-gray-200 dark:border-gray-700">

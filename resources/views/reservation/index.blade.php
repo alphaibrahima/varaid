@@ -55,24 +55,8 @@
                     </li>
                 </ul>
                 
-                <!-- Statut d'affiliation -->
+                <!-- Profil utilisateur -->
                 <div class="px-3 py-2 mt-auto">
-                    <div class="mb-2">
-                        <small class="text-white-50">Statut d'affiliation</small>
-                        @if(Auth::user()->hasVerifiedAffiliation())
-                            <div class="d-flex align-items-center bg-success bg-opacity-25 text-success rounded p-1 mt-1">
-                                <i class="bi bi-check-circle-fill me-2"></i>
-                                <small>Affiliation vérifiée</small>
-                            </div>
-                        @else
-                            <div class="d-flex align-items-center bg-danger bg-opacity-25 text-danger rounded p-1 mt-1">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                <small>Non vérifiée</small>
-                            </div>
-                        @endif
-                    </div>
-                    
-                    <!-- Profil utilisateur -->
                     <div class="d-flex align-items-center mt-3">
                         <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=random" class="rounded-circle me-2" width="32" height="32">
                         <div>
@@ -155,9 +139,6 @@
                     
                     <!-- Modal de confirmation -->
                     @include('reservation.partials.modal')
-                    {{-- modal code --}}
-                    @include('reservation.partials.affiliation-modal')
-
                 </div>
             </div>
         </div>
@@ -204,24 +185,8 @@
                     </li>
                 </ul>
                 
-                <!-- Statut d'affiliation -->
+                <!-- Profil utilisateur -->
                 <div class="px-3 py-2 mt-auto">
-                    <div class="mb-2">
-                        <small class="text-white-50">Statut d'affiliation</small>
-                        @if(Auth::user()->hasVerifiedAffiliation())
-                            <div class="d-flex align-items-center bg-success bg-opacity-25 text-success rounded p-1 mt-1">
-                                <i class="bi bi-check-circle-fill me-2"></i>
-                                <small>Affiliation vérifiée</small>
-                            </div>
-                        @else
-                            <div class="d-flex align-items-center bg-danger bg-opacity-25 text-danger rounded p-1 mt-1">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                <small>Non vérifiée</small>
-                            </div>
-                        @endif
-                    </div>
-                    
-                    <!-- Profil utilisateur -->
                     <div class="d-flex align-items-center mt-3">
                         <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=random" class="rounded-circle me-2" width="32" height="32">
                         <div>
@@ -243,127 +208,16 @@
     <script src="{{ asset('js/reservation.js') }}?v={{ time() }}"></script>
     <script>console.log("URL JS:", "{{ asset('js/reservation.js') }}?v={{ time() }}");</script>
 
-
     <script>
         // Make CSRF token and user info globally available
         window.csrf_token = '{{ csrf_token() }}';
         window.userInfo = {
-            // name: '{{ $user->name }}',
-            // firstName: '{{ $user->firstname}}',
-            // Si vous avez les champs séparés de prénom et nom dans votre base de données, utilisez-les
             full_address: '{{ $user->full_address }}',
             firstName: '{{ $user->firstname}}',
             lastName: '{{ $user->name }}',
             email: '{{ $user->email }}',
             phone: '{{ $user->phone }}'
         };
-        window.stripeConfig = {
-            publicKey: "{{ config('services.stripe.key') }}"
-        };
-
-
-        // script pour gérer l'affichage de la modal et la vérification du code
-        document.addEventListener('DOMContentLoaded', function() {
-            // Variables globales
-            const affiliationVerified = {{ $affiliationVerified ? 'true' : 'false' }};
-            const affiliationModal = new bootstrap.Modal(document.getElementById('affiliationModal'));
-            const affiliationForm = document.getElementById('affiliation-form');
-            const affiliationAlert = document.getElementById('affiliation-alert');
-            const resendCodeBtn = document.getElementById('resend-code-btn');
-            
-            // Afficher la modal si l'affiliation n'est pas vérifiée
-            if (!affiliationVerified) {
-                affiliationModal.show();
-            }
-            
-            // Gérer la soumission du formulaire
-            affiliationForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const code = document.getElementById('affiliation_code').value;
-                const verifyBtn = document.getElementById('verify-code-btn');
-                
-                // Désactiver le bouton pendant la vérification
-                verifyBtn.disabled = true;
-                verifyBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Vérification...';
-                
-                // Envoyer la requête AJAX
-                fetch('{{ route("affiliation.verify.ajax") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ affiliation_code: code })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Afficher un message de succès
-                        affiliationAlert.classList.remove('d-none', 'alert-danger');
-                        affiliationAlert.classList.add('alert-success');
-                        affiliationAlert.textContent = data.message;
-                        
-                        // Fermer la modal après 2 secondes
-                        setTimeout(() => {
-                            affiliationModal.hide();
-                            // Rafraîchir la page pour mettre à jour l'interface
-                            window.location.reload();
-                        }, 2000);
-                    } else {
-                        throw new Error(data.message);
-                    }
-                })
-                .catch(error => {
-                    // Afficher un message d'erreur
-                    affiliationAlert.classList.remove('d-none', 'alert-success');
-                    affiliationAlert.classList.add('alert-danger');
-                    affiliationAlert.textContent = error.message || 'Une erreur est survenue. Veuillez réessayer.';
-                    
-                    // Réactiver le bouton
-                    verifyBtn.disabled = false;
-                    verifyBtn.textContent = 'Vérifier le code';
-                });
-            });
-            
-            // Gérer la demande d'un nouveau code
-            resendCodeBtn.addEventListener('click', function() {
-                this.disabled = true;
-                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Envoi en cours...';
-                
-                fetch('{{ route("affiliation.resend.ajax") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Afficher un message de succès
-                        affiliationAlert.classList.remove('d-none', 'alert-danger');
-                        affiliationAlert.classList.add('alert-success');
-                        affiliationAlert.textContent = data.message;
-                    } else {
-                        throw new Error(data.message);
-                    }
-                })
-                .catch(error => {
-                    // Afficher un message d'erreur
-                    affiliationAlert.classList.remove('d-none', 'alert-success');
-                    affiliationAlert.classList.add('alert-danger');
-                    affiliationAlert.textContent = error.message || 'Une erreur est survenue. Veuillez réessayer.';
-                })
-                .finally(() => {
-                    // Réactiver le bouton
-                    this.disabled = false;
-                    this.textContent = 'Recevoir un nouveau code';
-                });
-            });
-        });
     </script>
 </body>
 </html>

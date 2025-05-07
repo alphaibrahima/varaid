@@ -50,62 +50,23 @@
                     </a>
                 </div>
                 
-                <!-- Statut de l'affiliation -->
-                <div class="mb-3">
-                    <div class="flex items-center py-2 px-4 text-gray-300 text-xs uppercase font-semibold">
-                        <span>Mon statut</span>
-                    </div>
-                    
-                    <div class="py-2 px-4 ml-2 rounded bg-gray-700">
-                        <p class="text-sm mb-2">Affiliation:</p>
-                        @if(Auth::user()->hasVerifiedAffiliation())
-                            <div class="flex items-center bg-green-100 text-green-800 text-xs rounded p-1">
-                                <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                </svg>
-                                <span>Affiliation vérifiée</span>
-                            </div>
-                        @else
-                            <div class="flex items-center bg-red-100 text-red-800 text-xs rounded p-1">
-                                <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                                </svg>
-                                <span>Non vérifiée</span>
-                            </div>
-                            <a href="{{ route('profile.edit') }}#affiliation" class="text-xs text-blue-400 hover:text-blue-300 mt-1 inline-block">
-                                <i class="fas fa-arrow-right mr-1"></i> Vérifier mon affiliation
-                            </a>
-                        @endif
-                    </div>
-                    
-                    <div class="py-2 px-4 ml-2 mt-2 rounded bg-gray-700">
-                        <p class="text-sm mb-1">Association:</p>
-                        <div class="text-xs">
-                            @if(Auth::user()->association)
-                                <span class="font-medium">{{ Auth::user()->association->name }}</span>
-                            @else
-                                <span class="text-red-400">Non affilié</span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-                
                 <!-- Aide/Informations -->
                 <div class="mb-3">
                     <div class="flex items-center py-2 px-4 text-gray-300 text-xs uppercase font-semibold">
                         <span>Informations</span>
                     </div>
                     
-                    <a href="#" class="flex items-center py-2 px-4 rounded transition-colors mb-1 ml-2 hover:bg-gray-700">
+                    <a href="{{ route('help.index') }}" class="flex items-center py-2 px-4 rounded transition-colors mb-1 ml-2 hover:bg-gray-700">
                         <i class="fas fa-info-circle mr-3"></i>
                         <span>Aide & FAQ</span>
                     </a>
                     
-                    <a href="#" class="flex items-center py-2 px-4 rounded transition-colors mb-1 ml-2 hover:bg-gray-700">
+                    <a href="{{ route('contacts.index') }}" class="flex items-center py-2 px-4 rounded transition-colors mb-1 ml-2 hover:bg-gray-700">
                         <i class="fas fa-phone mr-3"></i>
                         <span>Contacts</span>
                     </a>
                 </div>
+
             </nav>
             
             <div class="border-t border-gray-700 p-3">

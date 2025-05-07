@@ -127,47 +127,6 @@
         </div>
     </div>
 
-    <!-- Section Affiliation (uniquement pour les acheteurs) -->
-    @if(Auth::user()->role === 'buyer')
-    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
-        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-                {{ __('Affiliation') }}
-            </h3>
-        </div>
-
-        <div class="p-6">
-            @if(Auth::user()->hasVerifiedAffiliation())
-                <div class="flex items-center text-green-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                    </svg>
-                    <span>Votre affiliation est vérifiée.</span>
-                </div>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Vérifiée le {{ Auth::user()->affiliation_verified_at->format('d/m/Y à H:i') }}
-                </p>
-            @else
-                <div class="flex items-center text-red-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                    </svg>
-                    <span>Votre affiliation n'est pas encore vérifiée.</span>
-                </div>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Utilisez le code <strong>{{ Auth::user()->affiliation_code }}</strong> pour vérifier votre affiliation.
-                </p>
-                <form method="POST" action="{{ route('affiliation.resend.ajax') }}" class="mt-2">
-                    @csrf
-                    <x-secondary-button type="submit">
-                        {{ __('Recevoir mon code à nouveau') }}
-                    </x-secondary-button>
-                </form>
-            @endif
-        </div>
-    </div>
-    @endif
-
     <!-- Section Suppression de compte -->
     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
         <div class="p-6 border-b border-gray-200 dark:border-gray-700">
