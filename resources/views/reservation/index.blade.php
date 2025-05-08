@@ -104,9 +104,17 @@
 
 
                     <!-- Alertes spécifiques à chaque étape -->
-                    <div id="alert-step-1" class="alert alert-info mb-4 step-alert">
+                    <div id="alert-step-1" class="alert alert-warning mb-4 step-alert">
                         <i class="bi bi-info-circle"></i> 
                         En confirmant votre choix, vous recevrez une notification par sms et par mail détaillant vos rendez-vous.
+                        <ul>
+                            <li class="fw-bold fst-italic">
+                                En venant choisir mon agneau le samedi 31 mai, le sacrifice se fera le 1er jour de l’Aïd.
+                            </li>
+                            <li class="fw-bold fst-italic">
+                                En venant choisir mon agneau le dimanche 1er juin, le sacrifice se fera le 2ème jour de l’Aïd.
+                            </li>
+                        </ul>
                     </div>
                     
                     <div id="alert-step-2" class="alert alert-info mb-4 step-alert" style="display: none;">
@@ -114,9 +122,9 @@
                         Votre horaire d'abattage sera identique au créneau choisi. 
                     </div>
                     
-                    <div id="alert-step-3" class="alert alert-info mb-4 step-alert" style="display: none;">
+                    <div id="alert-step-3" class="alert alert-danger mb-4 step-alert" style="display: none;">
                         <i class="bi bi-info-circle"></i>
-                        Un acompte de 100€ par réservataire est obligatoire. Acompte non remboursable.
+                        Un acompte de 50€ par réservataire est obligatoire. Acompte non remboursable.
                     </div>
                     
                     <div id="alert-step-4" class="alert alert-info mb-4 step-alert" style="display: none;">
@@ -139,6 +147,9 @@
                     
                     <!-- Modal de confirmation -->
                     @include('reservation.partials.modal')
+
+                    <!-- Modal des conditions générales -->
+                    @include('reservation.partials.terms-modal')
                 </div>
             </div>
         </div>

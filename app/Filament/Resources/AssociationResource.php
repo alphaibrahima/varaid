@@ -16,6 +16,8 @@ class AssociationResource extends Resource
     protected static ?string $model = User::class;
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
     protected static ?string $navigationLabel = 'Associations';
+    protected static ?string $modelLabel = 'Association';
+    protected static ?string $pluralModelLabel = 'Associations';
 
     public static function form(Form $form): Form
     {

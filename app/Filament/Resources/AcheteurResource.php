@@ -141,7 +141,7 @@ class AcheteurResource extends Resource
                             ->label('Date de vérification')
                             ->disabled()
                             ->dehydrated(false)
-                            ->visible(fn ($livewire) => $livewire->record && $livewire->record->hasVerifiedAffiliation()),
+                            // ->visible(fn ($livewire) => $livewire->record && $livewire->record->hasVerifiedAffiliation()),
                     ])
                     ->visible(fn ($operation) => $operation === 'edit'),
             ]);
@@ -231,7 +231,7 @@ class AcheteurResource extends Resource
                     ->label('Vérifier affiliation')
                     ->icon('heroicon-o-check-badge')
                     ->color('success')
-                    ->visible(fn (User $record) => !$record->hasVerifiedAffiliation() && Auth::user()->can('verifyAffiliation', $record))
+                    // ->visible(fn (User $record) => !$record->hasVerifiedAffiliation() && Auth::user()->can('verifyAffiliation', $record))
                     ->requiresConfirmation()
                     ->action(function (User $record) {
                         $record->markAffiliationAsVerified();

@@ -67,4 +67,22 @@ Route::get('/check-reservation-limit', [ReservationController::class, 'checkRese
     ->middleware(['auth'])
     ->name('reservation.check-limit');
 
+// Dans routes/web.php
+Route::get('/download-template', function () {
+    $headers = [
+        'Content-Type' => 'text/csv',
+        'Content-Disposition' => 'attachment; filename="modele_import_acheteurs.csv"',
+    ];
+
+    $callback = function() {
+        $file = fopen('php://output', 'w');
+        fputcsv($file, ['nom', 'prenom', 'email', 'telephone', 'adresse_complete']);
+        fputcsv($file, ['Dupont', 'Jean', 'jean.dupont@example.com', '0601020304', '123 Rue Exemple, 75000 Paris']);
+        fputcsv($file, ['Martin', 'Sophie', 'sophie.martin@example.com', '0607080910', '456 Avenue Exemple, 69000 Lyon']);
+        fclose($file);
+    };
+
+    return response()->stream($callback, 200, $headers);
+})->name('download.template');
+
 require __DIR__.'/auth.php';

@@ -7,6 +7,42 @@ document.addEventListener("DOMContentLoaded", function() {
         const stepNumber = currentStep.id.split('-')[1];
         showAlertForStep(stepNumber);
     }
+    
+    // Initialiser les gestionnaires pour le modal des conditions
+    const acceptTermsCheckbox = document.getElementById('acceptTerms');
+    const confirmTermsButton = document.getElementById('confirmTerms');
+    
+    if (acceptTermsCheckbox && confirmTermsButton) {
+        acceptTermsCheckbox.addEventListener('change', function() {
+            confirmTermsButton.disabled = !this.checked;
+        });
+        
+        confirmTermsButton.addEventListener('click', function() {
+            // Fermer le modal des conditions
+            const termsModal = bootstrap.Modal.getInstance(document.getElementById('termsModal'));
+            if (termsModal) {
+                termsModal.hide();
+            }
+            
+            // Procéder à la réservation
+            proceedWithReservation();
+        });
+    }
+    
+    // Initialiser la valeur skipSelection depuis localStorage au chargement
+    const savedSkipSelection = localStorage.getItem('skipSelection');
+    if (savedSkipSelection) {
+        skipSelection = savedSkipSelection === 'true';
+        
+        // Mettre à jour la case à cocher si elle existe
+        const skipSelectionCheckbox = document.getElementById('skipSelection');
+        if (skipSelectionCheckbox) {
+            skipSelectionCheckbox.checked = skipSelection;
+        }
+    }
+    
+    // Vérifier la limite de réservation
+    checkReservationLimit();
 });
 
 window.onload = function() {
@@ -68,6 +104,17 @@ function goToStep(step) {
 
 // Fonction pour soumettre la réservation
 function confirmReservation() {
+    // Avant d'effectuer la réservation, afficher le modal des conditions
+    const termsModal = new bootstrap.Modal(document.getElementById('termsModal'));
+    termsModal.show();
+    
+    // Réinitialiser l'état de la case à cocher
+    document.getElementById('acceptTerms').checked = false;
+    document.getElementById('confirmTerms').disabled = true;
+}
+
+// Fonction pour procéder à la réservation après acceptation des conditions
+function proceedWithReservation() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     const slotId = localStorage.getItem('selectedSlotId');
     const quantity = parseInt(document.getElementById('quantity').value) || 1;
@@ -138,6 +185,12 @@ function confirmReservation() {
             localStorage.removeItem('selectedTime');
             localStorage.removeItem('skipSelection');
             
+            // Fermer le modal des conditions si toujours ouvert
+            const termsModal = bootstrap.Modal.getInstance(document.getElementById('termsModal'));
+            if (termsModal) {
+                termsModal.hide();
+            }
+            
             // Rediriger vers la page de reçu
             if (data.redirectUrl) {
                 window.location.href = data.redirectUrl;
@@ -195,7 +248,6 @@ function selectDay(day) {
     let url = `/get-slots/${encodeURIComponent(selectedDay)}`;
 
     // Requête AJAX pour récupérer les créneaux horaires
-    // Dans la fonction selectDay du fichier public/js/reservation.js
     $.get(url)
         .done(function(response) {
             console.log(response); // Debugging : voir la réponse
@@ -205,7 +257,6 @@ function selectDay(day) {
 
             if (Array.isArray(response) && response.length > 0) {
                 response.forEach(slot => {
-                    // Nous ne traitons que les créneaux disponibles, les bloqués ont déjà été filtrés côté serveur
                     let cardClass = "";
                     let clickAttr = "";
                     let placesText = "";
@@ -215,7 +266,12 @@ function selectDay(day) {
                     const endTime = slot.end_time.substring(0, 5).replace(':', 'h');
                     const timeRange = `${startTime} - ${endTime}`;
                     
-                    if (slot.places_restantes <= 0) {
+                    if (!slot.available) {
+                        // Créneau bloqué
+                        cardClass = "card creneaux-heure bg-light text-muted";
+                        clickAttr = ""; // Pas de click event
+                        placesText = `<span class="badge bg-danger">Bloqué</span>`;
+                    } else if (slot.places_restantes <= 0) {
                         // Créneau complet
                         cardClass = "card creneaux-heure bg-light text-muted";
                         clickAttr = ""; // Pas de click event
@@ -693,21 +749,3 @@ function updateRecap() {
     // Mettre à jour l'acompte
     updateDeposit();
 }
-
-// Lancer la vérification de la limite de réservation au chargement
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialiser la valeur skipSelection depuis localStorage au chargement
-    const savedSkipSelection = localStorage.getItem('skipSelection');
-    if (savedSkipSelection) {
-        skipSelection = savedSkipSelection === 'true';
-        
-        // Mettre à jour la case à cocher si elle existe
-        const skipSelectionCheckbox = document.getElementById('skipSelection');
-        if (skipSelectionCheckbox) {
-            skipSelectionCheckbox.checked = skipSelection;
-        }
-    }
-    
-    // Vérifier la limite de réservation
-    checkReservationLimit();
-});

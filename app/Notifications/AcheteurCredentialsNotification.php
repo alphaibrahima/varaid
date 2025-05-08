@@ -7,9 +7,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class AcheteurCredentialsNotification extends Notification
+class AcheteurCredentialsNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+    
     public $password;
 
     /**
@@ -37,23 +38,12 @@ class AcheteurCredentialsNotification extends Notification
     {
         return (new MailMessage)
                     ->subject('Vos identifiants de connexion')
-                    ->line('Votre compte acheteur a été créé avec succès.')
-                    ->line('Identifiants :')
-                    ->line('Email : ' . $notifiable->email)
-                    ->line('Mot de passe temporaire : ' . $this->password)
+                    ->greeting('Bonjour ' . $notifiable->firstname . ' ' . $notifiable->name)
+                    ->line('Votre compte a été créé avec succès.')
+                    ->line('Voici vos identifiants de connexion:')
+                    ->line('Email: ' . $notifiable->email)
+                    ->line('Mot de passe temporaire: ' . $this->password)
                     ->action('Se connecter', url('/login'))
-                    ->line('Changez votre mot de passe après la première connexion.');
-    }
-
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray(object $notifiable): array
-    {
-        return [
-            //
-        ];
+                    ->line('Nous vous recommandons de changer votre mot de passe après votre première connexion.');
     }
 }
