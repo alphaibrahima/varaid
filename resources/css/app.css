@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* style pour les etapes de formulaire */
+.page-container {
+    width: 66.66%; /* 2/3 de la largeur */
+    margin: 0 auto; /* Centre le contenu */
+}
+
+.creneaux-jour {
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.creneaux-jour:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.creneaux-heure {
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.creneaux-heure:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.03);
+}
+.creneaux-heure.selected {
+    background-color: #e7f5ff;
+    border-color: #4dabf7;
+}
+.taille-option {
+    cursor: pointer;
+}
+.taille-option.selected {
+    background-color: #e7f5ff;
+    border-color: #4dabf7;
+}
+.step {
+    display: none;
+}
+.step.active {
+    display: block;
+}
+.step-indicator {
+    position: relative;
+    height: 4px;
+    background-color: #e9ecef;
+    margin-bottom: 30px;
+}
+.step-progress {
+    height: 100%;
+    background-color: #4dabf7;
+    transition: width 0.3s;
+}
+.step-dots {
+    display: flex;
+    justify-content: space-between;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    transform: translateY(-50%);
+}
+.step-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    border: 3px solid white;
+}
+.step-dot.active {
+    background-color: #4dabf7;
+}
+.step-dot.completed {
+    background-color: #4dabf7;
+}
+
+/* Styles pour Stripe */
+.StripeElement {
+    background-color: white;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+}
+.StripeElement--focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+.StripeElement--invalid {
+    border-color: #dc3545;
+}
+.StripeElement--webkit-autofill {
+    background-color: #fefde5 !important;
+}
+
+/* Appliquer une bordure colorée au survol */
+.card.border-danger:hover {
+    border: 2px solid #dc3545; /* Rouge */
+}
+
+.card.border-warning:hover {
+    border: 2px solid #ffc107; /* Jaune */
+}
+
+.card.border-success:hover {
+    border: 2px solid #28a745; /* Vert */
+}
+
+/* Styles responsives pour les écrans plus petits */
+@media (max-width: 992px) {
+    .page-container {
+        width: 85%;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-container {
+        width: 95%;
+    }
+}
+
+.time-slot {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.time-slot:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.time-slot.selected {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}
