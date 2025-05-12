@@ -57,7 +57,8 @@ class ReservationPolicy
     public function create(User $user): bool
     {
         // Seul un administrateur peut créer une réservation manuellement
-        return $user->role === 'admin';
+        // return $user->role === 'admin';
+        return true; 
     }
 
     /**

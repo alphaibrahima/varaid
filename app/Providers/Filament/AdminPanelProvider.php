@@ -7,6 +7,7 @@ use App\Filament\Resources\AssociationResource;
 use App\Filament\Resources\QuotaResource;
 use App\Filament\Resources\SlotResource;
 use App\Filament\Resources\ReservationResource;
+use App\Filament\Resources\AdminReservationResource;
 use App\Filament\Resources\SmsMessageResource;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\SendSms;
@@ -44,7 +45,7 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 'Utilisateurs',
                 'Gestion des Créneaux',
-                'Réservations', // Ajouté le groupe pour les réservations
+                'Réservations', 
                 'Paramètres',
                 'Communication',
             ])
@@ -55,6 +56,8 @@ class AdminPanelProvider extends PanelProvider
                 SlotResource::class,
                 ReservationResource::class, 
                 SmsMessageResource::class,
+                // AdminReservationResource::class,
+                \App\Filament\Resources\AdminReservationResource::class,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->pages([

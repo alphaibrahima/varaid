@@ -100,11 +100,12 @@ class User extends Authenticatable
         return $query->where('is_active', true);
     }
 
+
     /**
-     * Spécifie le destinataire pour les notifications Brevo
+     * Spécifie le destinataire pour les notifications Brevo SMS
      */
-    
-    public function routeNotificationForBrevo($notification)
+
+    public function routeNotificationForBrevoSms($notification = null)
     {
         // Formatage du numéro de téléphone pour Brevo
         $phone = preg_replace('/[^0-9]/', '', $this->phone);

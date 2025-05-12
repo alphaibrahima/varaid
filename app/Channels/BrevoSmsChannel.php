@@ -38,7 +38,8 @@ class BrevoSmsChannel
         }
 
         // Récupérer le numéro de téléphone du notifiable
-        $to = $notifiable->routeNotificationForBrevoSms();
+        $to = $notifiable->routeNotificationForBrevoSms($notification);
+
         if (empty($to)) {
             Log::warning('No phone number for notifiable', [
                 'notifiable_id' => $notifiable->id ?? 'unknown',

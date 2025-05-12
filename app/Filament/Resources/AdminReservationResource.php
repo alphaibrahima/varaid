@@ -24,7 +24,15 @@ class AdminReservationResource extends Resource
     protected static ?string $navigationLabel = 'Réservations Admin';
     protected static ?string $modelLabel = 'Réservation Administrative';
     protected static ?string $pluralModelLabel = 'Réservations Administratives';
-    protected static ?int $navigationSort = 3;
+    protected static ?string $navigationGroup = 'Réservations';
+    protected static ?int $navigationSort = 2;
+
+    // protected static ?string $navigationIcon = 'heroicon-o-document-plus';
+    // protected static ?string $navigationLabel = 'Création Avancée';
+    // protected static ?string $modelLabel = 'Création par Lot';
+    // protected static ?string $pluralModelLabel = 'Créations par Lot';
+    // protected static ?string $navigationGroup = 'Réservations';
+    // protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -78,6 +86,27 @@ class AdminReservationResource extends Resource
                                 ->searchable()
                                 ->required()
                                 ->preload(),
+                            
+                            // Ajouter ces champs cachés
+                            Forms\Components\Hidden::make('user_id')
+                                ->default(function() {
+                                    return auth()->id(); 
+                                }),
+                                
+                            Forms\Components\Hidden::make('association_id')
+                                ->default(function() {
+                                    $user = auth()->user();
+                                    return $user && $user->association_id ? $user->association_id : null;
+                                }),
+                                // ->required(), 
+                                
+                            Forms\Components\Hidden::make('code')
+                                ->default(function() {
+                                    return 'R-' . \Illuminate\Support\Str::random(6);
+                                }),
+                                
+                            Forms\Components\Hidden::make('status')
+                                ->default('confirmed'),
                         ]),
                     
                     Forms\Components\Wizard\Step::make('Mode de réservation')
@@ -86,6 +115,8 @@ class AdminReservationResource extends Resource
                         ->schema([
                             Forms\Components\Tabs::make('reservation_mode')
                                 ->tabs([
+                                    //
+                                    // Dans l'onglet "Utilisateurs existants"
                                     Forms\Components\Tabs\Tab::make('Utilisateurs existants')
                                         ->icon('heroicon-o-users')
                                         ->schema([
@@ -101,8 +132,41 @@ class AdminReservationResource extends Resource
                                                         });
                                                 })
                                                 ->searchable(['name', 'firstname', 'email'])
+                                                ->reactive() // Important pour déclencher la mise à jour
                                                 ->required()
                                                 ->preload(),
+                                                
+                                            // Ajout du champ association_id dynamique
+                                            Forms\Components\Select::make('association_id')
+                                                ->label('Association')
+                                                ->options(function (callable $get) {
+                                                    // Récupérer les utilisateurs sélectionnés
+                                                    $selectedUsers = $get('existing_users') ?? [];
+                                                    
+                                                    if (empty($selectedUsers)) {
+                                                        // Aucun utilisateur sélectionné, afficher toutes les associations
+                                                        return User::where('role', 'association')
+                                                            ->pluck('name', 'id');
+                                                    } else {
+                                                        // Récupérer les IDs des associations des utilisateurs sélectionnés
+                                                        $associationIds = User::whereIn('id', $selectedUsers)
+                                                            ->pluck('association_id')
+                                                            ->filter()
+                                                            ->unique();
+                                                        
+                                                        // Récupérer les associations correspondantes
+                                                        return User::whereIn('id', $associationIds)
+                                                            ->where('role', 'association')
+                                                            ->pluck('name', 'id');
+                                                    }
+                                                })
+                                                ->searchable()
+                                                ->required()
+                                                ->reactive()
+                                                ->afterStateUpdated(function (callable $set, callable $get, $state) {
+                                                    // Logique optionnelle après changement d'association
+                                                })
+                                                ->helperText('Association pour cette réservation'),
                                         ]),
                                     
                                     Forms\Components\Tabs\Tab::make('Nouveaux utilisateurs')
@@ -132,12 +196,13 @@ class AdminReservationResource extends Resource
                                                         ->label('Adresse complète')
                                                         ->required()
                                                         ->rows(2),
-                                                    
+                                                    //
                                                     Forms\Components\Select::make('association_id')
                                                         ->label('Association')
                                                         ->options(User::where('role', 'association')->pluck('name', 'id'))
                                                         ->required()
                                                         ->searchable(),
+                                                    //
                                                 ])
                                                 ->columns(2)
                                                 ->addActionLabel('Ajouter un utilisateur')
@@ -157,13 +222,14 @@ class AdminReservationResource extends Resource
                                                 ->directory('temp-imports')
                                                 ->acceptedFileTypes(['text/csv', 'application/vnd.ms-excel'])
                                                 ->helperText('Le fichier doit contenir les colonnes: prenom, nom, email, telephone, adresse'),
-                                            
+                                            //
                                             Forms\Components\Select::make('csv_association_id')
                                                 ->label('Association pour tous les utilisateurs importés')
                                                 ->options(User::where('role', 'association')->pluck('name', 'id'))
-                                                ->required(fn (callable $get) => filled($get('csv_file')))
-                                                ->searchable()
-                                                ->visible(fn (callable $get) => filled($get('csv_file'))),
+                                                ->required() // Assurez-vous que c'est toujours required
+                                                ->searchable(),
+
+                                            //
                                             
                                             Forms\Components\View::make('filament.resources.admin-reservation-resource.csv-template'),
                                         ]),
@@ -319,13 +385,39 @@ class AdminReservationResource extends Resource
             ]);
     }
 
+
+    public static function canAccess(): bool
+    {
+        return true; 
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return true; 
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListAdminReservations::route('/'),
-            'create' => Pages\CreateAdminReservation::route('/create'),
+            'create' => Pages\CreateAdminReservation::route('/create'), // Assurez-vous que cette ligne existe
             'edit' => Pages\EditAdminReservation::route('/{record}/edit'),
             'view' => Pages\ViewAdminReservation::route('/{record}'),
         ];
     }
+
+    // protected function afterValidate(): void
+    // {
+    //     parent::afterValidate();
+        
+    //     // Si association_id est null, lever une exception
+    //     if (is_null($this->data['association_id'])) {
+    //         $this->halt();
+    //         Notification::make()
+    //             ->title('Association requise')
+    //             ->body('Vous devez sélectionner une association pour cette réservation.')
+    //             ->danger()
+    //             ->send();
+    //     }
+    // }
 }
